@@ -1,0 +1,6 @@
+{
+    "PATH_AUDIO": "data/anuraset/audio",
+    "PATH_EMBEDDINGS": "data/input/embeddings.npy",
+    "PATH_PREDICTIONS": "data/input/predictions.npy",
+    "PATH_ANNOTATIONS": "data/output/annotations.csv"
+}

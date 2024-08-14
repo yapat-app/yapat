@@ -1,0 +1,6 @@
+dash-bootstrap-components
+dash-daq
+gunicorn
+librosa
+pandas
+tensorflow
