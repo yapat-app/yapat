@@ -7,6 +7,8 @@ RUN pip install -r /requirements.txt \
 
 COPY src/ ./
 
+RUN mkdir -p ./data ./projects
+
 ENV ENVIRONMENT_FILE=".env"
 
 EXPOSE 8085
