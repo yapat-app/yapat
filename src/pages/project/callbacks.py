@@ -19,7 +19,7 @@ def scan_projects():
     """
     Scan the existing projects
     """
-    options = ([{'label': x, 'value': x} for x in os.listdir('../projects') if
+    options = ([{'label': x, 'value': x} for x in os.listdir('projects') if
                 os.path.isdir(os.path.join('projects', x))])
     return options
 
@@ -194,7 +194,7 @@ def toggle_collapse(n1, n2, is_open):
 )
 def check_project_name(value):
     if value:
-        is_valid = value not in os.listdir('../projects')
+        is_valid = value not in os.listdir('projects')
         return is_valid, not is_valid
     return False, False
 
