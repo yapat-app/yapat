@@ -1,9 +1,9 @@
 dash-bootstrap-components
 dash-daq
-dotenv
 gunicorn
 librosa
 pandas
+python-dotenv
 scikit-learn
 scikit-maad
 tensorflow
