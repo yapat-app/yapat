@@ -1,5 +1,6 @@
 dash-bootstrap-components
 dash-daq
+dotenv
 gunicorn
 librosa
 pandas
