@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 def get_sample(project_name):
     try:
-        path_queue_csv = os.path.join('..', 'projects', project_name, 'queue.csv')
+        path_queue_csv = os.path.join('projects', project_name, 'queue.csv')
         queue = pd.read_csv(path_queue_csv, index_col=0)
         sample = queue.loc[queue['status'] == 'pending', :].sample(1).squeeze()
         queue.loc[queue.loc[:, 'status'] == 'active', 'status'] = 'zombie'
@@ -32,7 +32,7 @@ def process_annotation(project_name, current_sample, new_queue_status, labels, c
     logger.debug('Not implemented')
 
     try:
-        path_queue_csv = os.path.join('..', 'projects', project_name, 'queue.csv')
+        path_queue_csv = os.path.join('projects', project_name, 'queue.csv')
         queue = pd.read_csv(path_queue_csv, index_col=0)
         logger.debug(
             f"Current sample {current_sample} status active?: {queue.loc[queue['sound_clip_url'] == current_sample, 'status'] == 'active'}")
@@ -40,7 +40,7 @@ def process_annotation(project_name, current_sample, new_queue_status, labels, c
         queue.to_csv(path_queue_csv)
 
         labels = labels or ['']
-        path_anont_csv = os.path.join('..', 'projects', project_name, 'annotations.csv')
+        path_anont_csv = os.path.join('projects', project_name, 'annotations.csv')
         annotations = pd.read_csv(path_anont_csv, index_col=0)
         index = range(len(labels)) if annotations.index.empty else range(annotations.index.max() + 1,
                                                                          annotations.index.max() + 1 + len(labels))
@@ -56,12 +56,12 @@ def process_annotation(project_name, current_sample, new_queue_status, labels, c
 
 
 def replenish_queue(n_min, project_name, method, n_max=None):
-    path_queue_csv = os.path.join('..', 'projects', project_name, 'queue.csv')
+    path_queue_csv = os.path.join('projects', project_name, 'queue.csv')
     queue = pd.read_csv(path_queue_csv, index_col=0)
 
     ndx_pending = queue['status'] == 'pending'
     if ndx_pending.sum() < n_min:
-        all_clips = glob.glob(os.path.join('..', 'projects', project_name, 'clips', '*.wav'))
+        all_clips = glob.glob(os.path.join('projects', project_name, 'clips', '*.wav'))
         candidate_clips = list(set([os.path.basename(p) for p in all_clips]) - set(queue['sound_clip_url']))
 
         n_max = n_max or n_min * 2
@@ -92,13 +92,13 @@ def replenish_queue(n_min, project_name, method, n_max=None):
 def _explore(project_name, candidate_clips, n):
     from sklearn.metrics.pairwise import pairwise_distances
 
-    path_embeddings = os.path.join('..', 'projects', project_name, 'embeddings.pkl')
+    path_embeddings = os.path.join('projects', project_name, 'embeddings.pkl')
     embeddings = pd.read_pickle(path_embeddings)
-    path_queue_csv = os.path.join('..', 'projects', project_name, 'queue.csv')
+    path_queue_csv = os.path.join('projects', project_name, 'queue.csv')
     queue = pd.read_csv(path_queue_csv, index_col=0)
     queued_clips = queue['sound_clip_url'].to_list()
 
-    path_distance_matrix = os.path.join('..', 'projects', project_name, 'distance_matrix.pkl')
+    path_distance_matrix = os.path.join('projects', project_name, 'distance_matrix.pkl')
     if os.path.exists(path_distance_matrix):
         distance_matrix = pd.read_pickle(path_distance_matrix)
         # TODO check for missing/superfluous rows and columns, and fix it
@@ -125,10 +125,10 @@ def _explore(project_name, candidate_clips, n):
 
 
 def _refine(project_name, candidate_clips, n):
-    path_anont_csv = os.path.join('..', 'projects', project_name, 'annotations.csv')
+    path_anont_csv = os.path.join('projects', project_name, 'annotations.csv')
     annotations = pd.read_csv(path_anont_csv, index_col=0)
 
-    path_embeddings = os.path.join('..', 'projects', project_name, 'embeddings.pkl')
+    path_embeddings = os.path.join('projects', project_name, 'embeddings.pkl')
     embeddings = pd.read_pickle(path_embeddings)
     annotations['value'] = 1  # (~annotations['label'].isnull()).astype(int)
     y_train = annotations.fillna('NaN').pivot_table(index='sound_clip_url', values='value', columns='label',

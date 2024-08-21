@@ -56,7 +56,7 @@ def get_audio_playback(audio, relayout_data, sample_rate):
 
 def _update_spectrogram(current_sample, project_name):
     # Calculate the spectrogram
-    path_clip = os.path.join('..', 'projects', project_name, 'clips', current_sample)
+    path_clip = os.path.join('projects', project_name, 'clips', current_sample)
     try:
         audio, sample_rate = librosa.load(path_clip, sr=None)
 
@@ -145,7 +145,7 @@ def register_callbacks():
         project_name = data.get('project_name')
         current_sample = data.get('current_sample')
         if project_name and current_sample:
-            path_clip = os.path.join('..', 'projects', project_name, 'clips', current_sample)
+            path_clip = os.path.join('projects', project_name, 'clips', current_sample)
             try:
                 assert (os.path.isfile(path_clip))
                 audio, sample_rate = librosa.load(path_clip, sr=None)
@@ -169,7 +169,7 @@ def register_callbacks():
         callback_trigger = dash.ctx.triggered_id
         project_name = data.get('project_name')
 
-        path_vocab = os.path.join('..', 'projects', project_name, 'vocabulary.txt')
+        path_vocab = os.path.join('projects', project_name, 'vocabulary.txt')
         checklist_options = checklist_options or []
         checklist_value = checklist_value or []
 
@@ -185,7 +185,7 @@ def register_callbacks():
         elif callback_trigger == 'project-content':
             current_sample = data.get('current_sample')
             if current_sample:
-                annotations = pd.read_csv(os.path.join('..', 'projects', project_name, 'annotations.csv'), index_col=0)
+                annotations = pd.read_csv(os.path.join('projects', project_name, 'annotations.csv'), index_col=0)
                 with open(path_vocab, 'r') as f:
                     lines = f.readlines()
                 checklist_options = [line.strip() for line in lines]

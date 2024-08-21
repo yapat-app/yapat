@@ -20,7 +20,7 @@ def scan_projects():
     Scan the existing projects
     """
     options = ([{'label': x, 'value': x} for x in os.listdir('../projects') if
-                os.path.isdir(os.path.join('..', 'projects', x))])
+                os.path.isdir(os.path.join('projects', x))])
     return options
 
 
@@ -30,7 +30,7 @@ def init_project(project_name, audio_path, clip_duration, embedding_model):
     """
     try:
         logging.info(f'Initializing project {project_name}')
-        os.makedirs(os.path.join('..', 'projects', project_name), exist_ok=True)
+        os.makedirs(os.path.join('projects', project_name), exist_ok=True)
         gen_tables(project_name)
         gen_clips(project_name, audio_path, clip_duration)
         gen_queue(project_name, n=10)
@@ -44,7 +44,7 @@ def gen_clips(project_name, audio_path, clip_duration):
     """
     Generates audio clips for the project.
     """
-    path_clips = os.path.join('..', 'projects', project_name, 'clips')
+    path_clips = os.path.join('projects', project_name, 'clips')
     os.makedirs(path_clips, exist_ok=True)
     list_files = get_list_files(audio_path)
     logging.info(f'Generating audio clips for project {project_name} with {len(list_files)} audio files')
@@ -57,7 +57,7 @@ def gen_tables(project_name):
     Generates the initial vocabulary and annotations files for the project.
     """
     logging.info(f'Generating initial vocabulary and annotations files for project {project_name}')
-    with open(os.path.join('..', 'projects', project_name, 'vocabulary.txt'), 'x') as f:
+    with open(os.path.join('projects', project_name, 'vocabulary.txt'), 'x') as f:
         os.utime(f.fileno(), None)
 
     annotations = pd.DataFrame({
@@ -65,14 +65,14 @@ def gen_tables(project_name):
         'label': [],
         'timestamp': []
     }, index=pd.Index([], name='id'))
-    annotations.to_csv(os.path.join('..', 'projects', project_name, 'annotations.csv'))
+    annotations.to_csv(os.path.join('projects', project_name, 'annotations.csv'))
 
 
 def gen_queue(project_name, n=5):
     """
     Generates a queue of audio clips to be annotated.
     """
-    all_clips = glob.glob(os.path.join('..', 'projects', project_name, 'clips', '*.wav'))
+    all_clips = glob.glob(os.path.join('projects', project_name, 'clips', '*.wav'))
     n = min(n, len(all_clips))
     logging.info(f'Generating queue of {n} audio clips for project {project_name}')
     try:
@@ -84,7 +84,7 @@ def gen_queue(project_name, n=5):
             # 'priority': 0,
             'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         }, index=pd.Index(range(n), name='id'))
-        queue.to_csv(os.path.join('..', 'projects', project_name, 'queue.csv'))
+        queue.to_csv(os.path.join('projects', project_name, 'queue.csv'))
     except Exception as e:
         logger.error(f"Error generating queue for project '{project_name}': {str(e)}")
         raise
@@ -95,7 +95,7 @@ def gen_embeddings(project_name, embedding_model):
     Generates embeddings for the audio clips in the project.
     """
     logging.info(f'Generating embeddings for project {project_name}')
-    all_clips = glob.glob(os.path.join('..', 'projects', project_name, 'clips', '*.wav'))
+    all_clips = glob.glob(os.path.join('projects', project_name, 'clips', '*.wav'))
 
     try:
         if embedding_model == 'birdnet':
@@ -113,7 +113,7 @@ def gen_embeddings(project_name, embedding_model):
             data=results['embeddings']
         )
 
-        embeddings_df.to_pickle(os.path.join('..', 'projects', project_name, 'embeddings.pkl'))
+        embeddings_df.to_pickle(os.path.join('projects', project_name, 'embeddings.pkl'))
     except Exception as e:
         logger.error(f"Error generating embeddings for project '{project_name}': {str(e)}")
         raise
@@ -155,8 +155,8 @@ def update_options_project(project_value, project_create, brand, project_name, a
 def update_project_summary(project_name):
     children = [html.H5('Project summary')]
     if project_name:
-        all_clips = glob.glob(os.path.join('..', 'projects', project_name, 'clips', '*.wav'))
-        annotations = pd.read_csv(os.path.join('..', 'projects', project_name, 'annotations.csv'))
+        all_clips = glob.glob(os.path.join('projects', project_name, 'clips', '*.wav'))
+        annotations = pd.read_csv(os.path.join('projects', project_name, 'annotations.csv'))
         n_labeled = len(annotations['sound_clip_url'].unique())
         n_classes = len(annotations.columns)
         children.append(html.P(f'Found {len(all_clips)} clips, {n_labeled} of which are labelled for {n_classes} class categories'))
