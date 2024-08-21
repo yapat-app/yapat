@@ -11,19 +11,11 @@ dash.register_page(
 
 layout = html.Div(
     [
-        html.H1('Home page!'),
+        html.H1('Welcome to YAPAT'),
         html.Div(
-            html.A('Checkout the annotation page here.', href='/annotate')
-        ),
-        dcc.RadioItems(
-            id='radios',
-            options=[{'label': i, 'value': i} for i in ['Orange', 'Blue', 'Red']],
-            value='Orange',
+            html.A('Select a project or start a new one here.', href='/project')
         ),
         html.Div(id='content')
     ]
 )
 
-@callback(Output('content', 'children'), Input('radios', 'value'))
-def home_radios(value):
-    return f'You have selected {value}'

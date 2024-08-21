@@ -3,4 +3,6 @@ dash-daq
 gunicorn
 librosa
 pandas
+scikit-learn
+scikit-maad
 tensorflow
