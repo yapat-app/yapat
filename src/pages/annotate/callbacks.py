@@ -111,10 +111,11 @@ def register_callbacks():
             if current_sample and status:
                 process_annotation(project_name, current_sample, status, annot_value, dash.ctx.triggered)
 
-            sample = get_sample(project_name)
-
             n_processed = replenish_queue(n_min=5, project_name=project_name, method=method)
-            data['current_sample'] = sample
+
+            if status is not None or data.get('current_sample') == '':
+                sample = get_sample(project_name)
+                data['current_sample'] = sample
 
         return data, [f"{n_processed}"]
 
