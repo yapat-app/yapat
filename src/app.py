@@ -3,83 +3,42 @@ import os
 
 import dash
 import dash_bootstrap_components as dbc
-from dash import html, dcc, Output, Input
-from flask import Flask, render_template, redirect, url_for, request, flash
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user
+from dash import html, dcc, callback, Output, Input, State
+from dash.exceptions import PreventUpdate
+from flask import Flask
+from flask_login import LoginManager, UserMixin, login_user
 from flask_sqlalchemy import SQLAlchemy
 
 from components import navbar, footer
-from utils.auth import User
+from components.login import login_location  # , User
 from utils.settings import APP_HOST, APP_PORT, APP_DEBUG, DEV_TOOLS_PROPS_CHECK
 
-# Initialize Flask app
 server = Flask(__name__)
 server.config.update(SECRET_KEY=os.getenv('SECRET_KEY'))
 server.config.update(SQLALCHEMY_DATABASE_URI='sqlite:///users.db')
 server.config.update(SQLALCHEMY_TRACK_MODIFICATIONS=False)
 
-# Initialize Flask extensions
-db = SQLAlchemy(server)
 login_manager = LoginManager(server)
-login_manager.login_view = '/login'
+login_manager.init_app(server)
+login_manager.login_view = 'login'
+
+db = SQLAlchemy(server)
 
 
 # Define User model
-class User(UserMixin, db.Model):
+class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(80), nullable=False)
+    username = db.Column(db.String(150), unique=True, nullable=False)
+    password = db.Column(db.String(150), nullable=False)
 
 
-# Create database tables
 with server.app_context():
     db.create_all()
 
 
-# Flask-Login user loader
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
-
-
-# Flask routes for registration and login
-@server.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        if User.query.filter_by(username=username).first():
-            flash('Username already exists.', 'danger')
-        else:
-            new_user = User(username=username, password=password)
-            db.session.add(new_user)
-            db.session.commit()
-            flash('New user created.', 'success')
-            return redirect(url_for('login'))
-    return render_template('register.html')
-
-
-# login_manager.init_app(server)
-
-@server.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        user = User.query.filter_by(username=username, password=password).first()
-        if user:
-            login_user(user, remember=True)
-            return redirect(url_for('protected'))
-        else:
-            flash('Login unsuccessful. Please check username and password', 'danger')
-    return render_template('login.html')
-
-
-@server.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('login'))
 
 
 app = dash.Dash(
@@ -94,36 +53,12 @@ app = dash.Dash(
     title='YAPAT | yet another PAM annotation tool'
 )
 
-app.layout = html.Div([
-    dcc.Location(id='url', refresh=False),
-    html.Div(id='page-content')
-])
 
-@app.callback(
-    Output('page-content', 'children'),
-    Input('url', 'pathname')
-)
-def display_page(pathname):
-    if pathname == '/dash/protected':
-        return protected_layout()
-    return login_redirect_layout()
-
-
-def login_redirect_layout():
-    return dcc.Link('Go to Login', href='/login')
-
-
-@server.route('/protected')
-@login_required
-def protected():
-    return redirect('/dash/protected')
-
-
-def protected_layout():
+def serve_layout():
     '''Define the layout of the application'''
     return html.Div(
         [
-            # login_location,
+            login_location,
             navbar.navbar,
             dcc.Store(
                 id='project-content',
@@ -142,8 +77,58 @@ def protected_layout():
     )
 
 
-# app.layout = serve_layout  # set the layout to the serve_layout function
-# server = app.server  # the server is needed to deploy the application
+app.layout = serve_layout
+
+
+@callback(
+    Output('login-feedback', 'children'),
+    Output('url-login', 'pathname'),
+    Input('login-button', 'n_clicks'),
+    State('login-username', 'value'),
+    State('login-password', 'value'),
+    State('_pages_location', 'pathname'),
+    prevent_initial_call=True
+)
+def login_button_click(n_clicks, username, password, pathname):
+    if n_clicks > 0:
+        user = User.query.filter_by(username=username).first()
+        from werkzeug.security import check_password_hash
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+            return 'Login Successful', '/'
+        return 'Incorrect username or password', pathname
+    raise PreventUpdate
+
+
+@app.callback(
+    Output('register-feedback', 'children'),
+    Input('register-button', 'n_clicks'),
+    State('register-username', 'value'),
+    State('register-password', 'value')
+)
+def register_user(n_clicks, username, password):
+    if n_clicks > 0:
+        if not username or not password:
+            return "Username and password cannot be empty."
+
+        # Check if the user already exists
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            return "This username is already taken. Please choose a different one."
+
+        # Hash the password for security
+        from werkzeug.security import generate_password_hash
+        hashed_password = generate_password_hash(password, method='pbkdf2')
+
+        # Create a new user and add to the database
+        new_user = User(username=username, password=hashed_password)
+        db.session.add(new_user)
+        db.session.commit()
+
+        return html.A("User registered successfully. Login here", href='/login')
+
+    return ""
+
 
 if __name__ == "__main__":
     app.run_server(

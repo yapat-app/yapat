@@ -1,12 +1,25 @@
 import logging
 import os
+from functools import wraps
 
 import librosa
 import numpy as np
 import soundfile as sf
 import tensorflow as tf
+from dash import dcc
+from flask_login import current_user
 
 logger = logging.getLogger(__name__)
+
+
+def login_required_layout(layout_func):
+    @wraps(layout_func)
+    def decorated_layout(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return dcc.Location(pathname='/login', id='redirect-login')
+        return layout_func(*args, **kwargs)
+
+    return decorated_layout
 
 
 def get_list_files(input_dir):

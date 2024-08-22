@@ -1,12 +1,13 @@
 import dash_bootstrap_components as dbc
 from dash import callback, Input, Output
 
+from .login import login_info
+
 navbar = dbc.NavbarSimple(
     children=[
         dbc.NavItem(dbc.NavLink('Project', id='nav_datasource', href='/project')),
-        # dbc.NavItem(dbc.NavLink('Settings', id='nav_settings', href='/settings', disabled=True)),
         dbc.NavItem(dbc.NavLink('Annotation', id='nav_annotation', href='/annotate', disabled=True)),
-        # dbc.NavItem(dbc.NavLink('Reset', id='nav_exit', href='/exit', disabled=True))
+        login_info
     ],
     brand='YAPAT',
     brand_href='/',

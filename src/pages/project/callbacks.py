@@ -144,6 +144,7 @@ def update_options_project(project_value, project_create, brand, project_name, a
 
     options = scan_projects()
     data['project_name'] = project_value
+    data['current_sample'] = ''
 
     return options, project_value, data
 

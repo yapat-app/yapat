@@ -5,6 +5,7 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
+from flask_login import current_user
 
 from .model import get_model, train_model
 
@@ -47,7 +48,8 @@ def process_annotation(project_name, current_sample, new_queue_status, labels, c
         new_annotations = pd.DataFrame({
             'sound_clip_url': current_sample,
             'label': labels,
-            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'username': current_user.username
         }, index=pd.Index(index, name='id'))
         annotations = new_annotations if annotations.empty else pd.concat([annotations, new_annotations])
         annotations.to_csv(path_anont_csv)
