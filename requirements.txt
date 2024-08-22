@@ -1,4 +1,6 @@
 dash-bootstrap-components
+Flask-Login
+Flask-SQLAlchemy
 gunicorn
 librosa
 pandas
