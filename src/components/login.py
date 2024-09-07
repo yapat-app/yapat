@@ -3,12 +3,6 @@ import dash_bootstrap_components as dbc
 from dash import html, dcc, callback, Output, Input
 from flask_login import current_user, logout_user
 
-# class User(UserMixin):
-#     # User data model. It has to have at least self.id as a minimum
-#     def __init__(self, username):
-#         self.id = username
-#         self.role = 'student'
-
 
 login_card = dbc.Card(
     [
@@ -44,36 +38,43 @@ login_card = dbc.Card(
 
 login_location = dcc.Location(id='url-login')
 login_info = html.Div(id='user-status-header')
-logged_in_info = html.Div(
-    [
-        dbc.Button(
-            html.I(className='fas fa-circle-user fa-xl'),
-            id='user-popover',
-            outline=True,
-            color='light',
-            class_name='border-0'
-        ),
-        dbc.Popover(
-            [
-                dbc.PopoverHeader('Settings'),
-                dbc.PopoverBody(
-                    [
-                        dcc.Link(
-                            [
-                                html.I(className='fas fa-arrow-right-from-bracket me-1'),
-                                'Logout'
-                            ],
-                            href='/logout'
-                        )
-                    ]
-                )
-            ],
-            target='user-popover',
-            trigger='focus',
-            placement='bottom'
-        )
-    ]
-)
+
+
+def logged_in_info(username: str = ''):
+    layout = html.Div(
+        [
+            dbc.Button(
+                html.I(className='fas fa-circle-user fa-xl'),
+                id='user-popover',
+                outline=True,
+                color='light',
+                class_name='border-0'
+            ),
+            dbc.Popover(
+                [
+                    # dbc.PopoverHeader('Settings'),
+                    dbc.PopoverBody(
+                        [
+                            html.P(username, id='username_display'),
+                            dcc.Link(
+                                [
+                                    html.I(className='fas fa-arrow-right-from-bracket me-1'),
+                                    'Logout'
+                                ],
+                                href='/logout'
+                            )
+                        ]
+                    )
+                ],
+                target='user-popover',
+                trigger='focus',
+                placement='bottom'
+            )
+        ]
+    )
+    return layout
+
+
 logged_out_info = dbc.NavItem(
     dbc.NavLink(
         'Login',
@@ -92,7 +93,7 @@ def update_authentication_status(path):
         logout_user()
         child = logged_out_info
     elif logged_in:
-        child = logged_in_info
+        child = logged_in_info(current_user.username)
     else:
         child = logged_out_info
     return child
