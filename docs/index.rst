@@ -10,27 +10,23 @@ YAPAT Documentation
 **AI-Driven PAM Annotation & Visualization Hub**
 
 This yet another PAM annotation tool (YAPAT).
-Designed for efficient analysis of PAM data, YAPAT utilizes machine learning to prioritize samples for expert annotation (as in `Kath et al., 2024<https://www.sciencedirect.com/science/article/pii/S1574954124002528>`_).
+Designed for efficient analysis of PAM data, YAPAT utilizes machine learning to prioritize samples for expert annotation (as in `Kath et al., 2024 <https://www.sciencedirect.com/science/article/pii/S1574954124002528>`_).
 The integrated interactive visualization suite combines embedding, dimensionality reduction, and clustering for dynamic data exploration.
 
-Contents:
-=========
+.. toctree::
+
+   usage
+   api
 
 .. toctree::
    :maxdepth: 2
-   :caption: Documentation:
+   :caption: Contents
 
-   introduction
    installation
    usage
    docker
-   modules
    contributing
 
-Introduction
-============
-
-YAPAT is a Python-based PAM annotation tool designed to use machine learning techniques to retrieve high-priority samples from datasets. It supports automation and efficient sample retrieval.
 
 Installation
 ============
@@ -50,14 +46,11 @@ To start the application, use:
 
    python main.py
 
-Ensure that `config.json` is configured with the correct parameters before starting the application.
 
 Docker
 ======
 
 YAPAT can also be run in a Docker container for an isolated environment.
-
-### Build the Docker Image
 
 To build the Docker image, run the following command in the root directory (where the `Dockerfile` is located):
 
@@ -65,22 +58,20 @@ To build the Docker image, run the following command in the root directory (wher
 
    docker build -t yapat .
 
-### Run the Docker Container
-
 After building the image, run the container:
 
 .. code-block:: bash
 
-   docker run --rm --env .env -p 1050:1050 -v $(pwd)/data:/data -v $(pwd)/projects:/projects -v $(pwd)/instance:/instance yapat
+   docker run --env .env -p 1050:1050 -v $(pwd)/data:/data -v $(pwd)/projects:/projects -v $(pwd)/instance:/instance --rm yapat
 
 This will run YAPAT inside a Docker container with the following options:
 
-- Remove the container after it stops with the `--rm` flag.
 - ``--env .env``: Pass environment variables from the file `.env` to the container.
 - ``-p 1050:1050``: Map port 1050 on the host to port 1050 on the container.
 - ``-v $(pwd)/data:/data``: Mount the host directory `$(pwd)/data` to `/data` in the container.
 - ``-v $(pwd)/projects:/projects``: Mount the host directory `$(pwd)/projects` to `/projects` in the container.
 - ``-v $(pwd)/instance:/instance``: Mount the host directory `$(pwd)/instance` to `/instance` in the container.
+- ``--rm``: Remove the container after it stops
 - ``yapat``: The Docker image to use for the container.
 
 
