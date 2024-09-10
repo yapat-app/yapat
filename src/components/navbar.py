@@ -6,6 +6,8 @@ from .login import login_info
 navbar = dbc.NavbarSimple(
     children=[
         dbc.NavItem(dbc.NavLink('Project', id='nav_datasource', href='/project')),
+        dbc.NavItem(dbc.NavLink('Visualize', id='nav_viz', href='/vis', disabled=True)),
+        dbc.NavItem(dbc.NavLink('Compare', id='nav_compare', href='/compare', disabled=True)),
         dbc.NavItem(dbc.NavLink('Annotation', id='nav_annotation', href='/annotate', disabled=True)),
         login_info
     ],
