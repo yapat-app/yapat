@@ -22,11 +22,12 @@ Replace `your-username` with your GitHub username.
 
 **3. Create a New Branch**
 
-Navigate into the cloned repository and create a new branch for your changes:
+Navigate into the cloned repository and create a new branch based off the `dev` branch for your changes:
 
 .. code-block:: bash
 
    cd yapat
+   git checkout dev
    git checkout -b my-feature-branch
 
 Replace `my-feature-branch` with a descriptive name for your branch.
@@ -54,7 +55,7 @@ Push your changes to your forked repository on GitHub:
 
 **7. Create a Pull Request**
 
-Go to the YAPAT repository on GitHub and open a pull request from your branch to the `main` branch of the original repository. Provide a detailed description of your changes and any relevant information.
+Go to the YAPAT repository on GitHub and open a pull request from your branch to the `dev` branch of the original repository. Provide a detailed description of your changes and any relevant information.
 
 **8. Review and Feedback**
 
@@ -62,7 +63,7 @@ Once your pull request is submitted, the project maintainers will review your ch
 
 **9. Merging**
 
-Once your pull request is approved, it will be merged into the `main` branch. You will be notified once your changes have been merged.
+Once your pull request is approved, it will be merged into the `dev` branch. You will be notified once your changes have been merged.
 
 **10. Stay Updated**
 
@@ -72,7 +73,8 @@ To keep your fork updated with the latest changes from the original repository, 
 
    git remote add upstream https://github.com/yapat-app/yapat.git
    git fetch upstream
-   git merge upstream/main
+   git checkout dev
+   git merge upstream/dev
 
 For more detailed instructions or if you encounter any issues, please refer to the project's documentation or contact the maintainers.
 
