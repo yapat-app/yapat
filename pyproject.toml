@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yapat"
+version = "0.1.0-alpha"
+description = "PAM annotation tool using machine learning to retrieve high-priority samples."
+readme = "README.md"
+requires-python = ">=3.7"
+license = { text = "AGPL-3.0" }
+authors = [
+    { name = "Thiago S. Gouvêa", email = "thiago.gouvea@dfki.de" }
+]
+
+# Actual dependencies from requirements.txt
+dependencies = [
+    "dash-bootstrap-components",
+    "Flask-Login",
+    "Flask-SQLAlchemy",
+    "gunicorn",
+    "librosa",
+    "pandas",
+    "python-dotenv",
+    "scikit-learn",
+    "scikit-maad",
+    "tensorflow"
+]
+
+[project.scripts]
+yapat = "app:main"
+
+[project.urls]
+homepage = "https://github.com/yapat-app/yapat"
+repository = "https://github.com/yapat-app/yapat"
+documentation = "https://yapat.readthedocs.io/"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+
+#TODO pip-compile pyproject.toml --output-file=requirements.txt at git push

@@ -55,7 +55,7 @@ app = dash.Dash(
 
 
 def serve_layout():
-    '''Define the layout of the application'''
+    """Define the layout of the application"""
     return html.Div(
         [
             login_location,
@@ -130,10 +130,15 @@ def register_user(n_clicks, username, password):
     return ""
 
 
-if __name__ == "__main__":
+def main():
+    """Entry point for the Dash app"""
     app.run_server(
         host=APP_HOST,
         port=APP_PORT,
         debug=APP_DEBUG,
         dev_tools_props_check=DEV_TOOLS_PROPS_CHECK
     )
+
+
+if __name__ == "__main__":
+    main()
