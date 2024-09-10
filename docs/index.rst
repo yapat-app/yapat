@@ -3,7 +3,22 @@ This is yet another PAM annotation tool
 ===============================================
 
 **YAPAT**
-*AI-Driven PAM Annotation & Visualization Hub*
+*AI-Driven PAM Data Annotation & Visualization*
+
+.. image:: https://img.shields.io/github/license/yapat-app/yapat
+   :target: https://github.com/yapat-app/yapat/blob/dev/LICENSE
+
+.. image:: https://img.shields.io/pypi/v/yapat
+   :target: https://pypi.org/project/yapat/
+
+.. image:: https://img.shields.io/github/issues/yapat-app/yapat
+   :target: https://github.com/yapat-app/yapat/issues
+
+.. image:: https://img.shields.io/github/stars/yapat-app/yapat.svg
+   :target: https://github.com/yapat-app/yapat/stargazers
+
+.. caution::
+   Under construction.
 
 Designed for efficient analysis of PAM data, YAPAT utilizes machine learning to prioritize samples for expert annotation.
 The integrated visualization suite combines embedding, dimensionality reduction, and clustering for dynamic data exploration.
