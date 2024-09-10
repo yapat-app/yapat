@@ -13,9 +13,7 @@ First, pull the Docker image from the GitHub Container Registry:
 
 .. code-block:: bash
 
-   docker pull ghcr.io/yapat-app/yapat:0.1.0-alpha
-
-Replace `0.1.0-alpha` with the desired version tag if needed.
+   docker pull ghcr.io/yapat-app/yapat:latest
 
 **2. Run the Docker Container**
 
@@ -29,7 +27,7 @@ To run the Docker container with Gunicorn, use the following command:
      -v $(pwd)/projects:/projects \
      -v $(pwd)/instance:/instance \
      --env ENVIRONMENT_FILE=".env" \
-     ghcr.io/yapat-app/yapat:0.1.0-alpha \
+     ghcr.io/yapat-app/yapat:latest \
      gunicorn --config /app/gunicorn_config.py app:server
 
 Explanation of the options used:
@@ -40,7 +38,7 @@ Explanation of the options used:
 - ``-v $(pwd)/projects:/projects``: Mount the host directory `projects` to `/projects` in the container.
 - ``-v $(pwd)/instance:/instance``: Mount the host directory `instance` to `/instance` in the container.
 - ``--env ENVIRONMENT_FILE=".env"``: Pass environment variables from the `.env` file.
-- ``ghcr.io/yapat-app/yapat:0.1.0-alpha``: Specify the Docker image and version.
+- ``ghcr.io/yapat-app/yapat:latest``: Specify the Docker image and version.
 - ``gunicorn --config /app/gunicorn_config.py app:server``: Run Gunicorn with the specified configuration file and application module.
 
 **3. Access the Application**
@@ -55,8 +53,8 @@ To stop and remove the Docker container, use the following command:
 
 .. code-block:: bash
 
-   docker stop $(docker ps -q --filter ancestor=ghcr.io/yapat-app/yapat:0.1.0-alpha)
-   docker rm $(docker ps -a -q --filter ancestor=ghcr.io/yapat-app/yapat:0.1.0-alpha)
+   docker stop $(docker ps -q --filter ancestor=ghcr.io/yapat-app/yapat:latest)
+   docker rm $(docker ps -a -q --filter ancestor=ghcr.io/yapat-app/yapat:latest)
 
 This will stop and remove all containers running the specified Docker image.
 

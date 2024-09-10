@@ -16,9 +16,7 @@ Instead of building the Docker image, you can pull the pre-built Docker image fr
 
 .. code-block:: bash
 
-   docker pull ghcr.io/yapat-app/yapat:0.1.0-alpha
-
-Replace `0.1.0-alpha` with the desired version tag if needed.
+   docker pull ghcr.io/yapat-app/yapat:latest
 
 **3. Run the Docker Container**
 
@@ -33,7 +31,7 @@ Run the Docker container using the image you just pulled. Use the following comm
      -v $(pwd)/projects:/app/projects \
      -v $(pwd)/instance:/app/instance \
      --env ENVIRONMENT_FILE=".env" \
-     ghcr.io/yapat-app/yapat:0.1.0-alpha
+     ghcr.io/yapat-app/yapat:latest
 
 Here’s what each option does:
 
@@ -44,7 +42,7 @@ Here’s what each option does:
 - ``-v $(pwd)/projects:/app/projects``: Mount the `projects` directory from your host to `/app/projects` in the container.
 - ``-v $(pwd)/instance:/app/instance``: Mount the `instance` directory from your host to `/app/instance` in the container.
 - ``--env ENVIRONMENT_FILE=".env"``: Pass the environment variable `ENVIRONMENT_FILE` to the container.
-- ``ghcr.io/yapat-app/yapat:0.1.0-alpha``: Use the Docker image from the GitHub Container Registry.
+- ``ghcr.io/yapat-app/yapat:latest``: Use the Docker image from the GitHub Container Registry.
 
 **4. Access the Application**
 
@@ -70,7 +68,7 @@ If a new version of the Docker image is available or if you need to update the c
 
 .. code-block:: bash
 
-   docker pull ghcr.io/yapat-app/yapat:0.1.0-alpha
+   docker pull ghcr.io/yapat-app/yapat:latest
    docker stop yapat-container
    docker rm yapat-container
    docker run -d \
@@ -80,7 +78,7 @@ If a new version of the Docker image is available or if you need to update the c
      -v $(pwd)/projects:/app/projects \
      -v $(pwd)/instance:/app/instance \
      --env ENVIRONMENT_FILE=".env" \
-     ghcr.io/yapat-app/yapat:0.1.0-alpha
+     ghcr.io/yapat-app/yapat:latest
 
 **7. Configuration**
 
