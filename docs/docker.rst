@@ -4,25 +4,25 @@ Running with Docker
 .. caution::
    Under construction.
 
-To run the YAPAT application locally using Docker, follow these steps to build and start the Docker container.
+To run the YAPAT application locally using Docker, follow these steps to pull and start the Docker container.
 
 **1. Install Docker**
 
 Ensure that Docker is installed on your machine. You can download and install Docker from the [official Docker website](https://www.docker.com/get-started).
 
-**2. Build the Docker Image**
+**2. Pull the Docker Image**
 
-Navigate to the root directory of the YAPAT project (where the `Dockerfile` is located) and build the Docker image with the following command:
+Instead of building the Docker image, you can pull the pre-built Docker image from the GitHub Container Registry:
 
 .. code-block:: bash
 
-   docker build -t yapat .
+   docker pull ghcr.io/yapat-app/yapat:0.1.0-alpha
 
-This command creates a Docker image named `yapat` based on the Dockerfile.
+Replace `0.1.0-alpha` with the desired version tag if needed.
 
 **3. Run the Docker Container**
 
-Run the Docker container using the image you just built. Use the following command:
+Run the Docker container using the image you just pulled. Use the following command:
 
 .. code-block:: bash
 
@@ -33,7 +33,7 @@ Run the Docker container using the image you just built. Use the following comma
      -v $(pwd)/projects:/app/projects \
      -v $(pwd)/instance:/app/instance \
      --env ENVIRONMENT_FILE=".env" \
-     yapat
+     ghcr.io/yapat-app/yapat:0.1.0-alpha
 
 Here’s what each option does:
 
@@ -44,7 +44,7 @@ Here’s what each option does:
 - ``-v $(pwd)/projects:/app/projects``: Mount the `projects` directory from your host to `/app/projects` in the container.
 - ``-v $(pwd)/instance:/app/instance``: Mount the `instance` directory from your host to `/app/instance` in the container.
 - ``--env ENVIRONMENT_FILE=".env"``: Pass the environment variable `ENVIRONMENT_FILE` to the container.
-- ``yapat``: Use the Docker image named `yapat`.
+- ``ghcr.io/yapat-app/yapat:0.1.0-alpha``: Use the Docker image from the GitHub Container Registry.
 
 **4. Access the Application**
 
@@ -64,13 +64,13 @@ To remove the container, run:
 
    docker rm yapat-container
 
-**6. Rebuild the Docker Image**
+**6. Re-deploy with New Versions**
 
-If you make changes to the application or Dockerfile, rebuild the Docker image and restart the container:
+If a new version of the Docker image is available or if you need to update the container:
 
 .. code-block:: bash
 
-   docker build -t yapat .
+   docker pull ghcr.io/yapat-app/yapat:0.1.0-alpha
    docker stop yapat-container
    docker rm yapat-container
    docker run -d \
@@ -80,7 +80,7 @@ If you make changes to the application or Dockerfile, rebuild the Docker image a
      -v $(pwd)/projects:/app/projects \
      -v $(pwd)/instance:/app/instance \
      --env ENVIRONMENT_FILE=".env" \
-     yapat
+     ghcr.io/yapat-app/yapat:0.1.0-alpha
 
 **7. Configuration**
 
@@ -89,3 +89,4 @@ Make sure you have a `.env` file in the root directory of your project or adjust
 For more detailed configuration and usage, refer to the Docker documentation.
 
 These instructions will help you get YAPAT up and running locally using Docker.
+
