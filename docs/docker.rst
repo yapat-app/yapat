@@ -46,7 +46,7 @@ Here’s what each option does:
 
 **4. Access the Application**
 
-Once the container is running, you can access the YAPAT application by opening a web browser and navigating to `http://localhost:1050`.
+Once the container is running, you can access the YAPAT application by opening a web browser and navigating to `http://localhost:1050 <http://localhost:1050>`_.
 
 **5. Stopping and Removing the Container**
 
