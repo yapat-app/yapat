@@ -74,9 +74,9 @@ If a new version of the Docker image is available or if you need to update the c
    docker run -d \
      --name yapat-container \
      -p 1050:1050 \
-     -v $(pwd)/data:/app/data \
-     -v $(pwd)/projects:/app/projects \
-     -v $(pwd)/instance:/app/instance \
+     -v $(pwd)/data:/data \
+     -v $(pwd)/projects:/projects \
+     -v $(pwd)/instance:/instance \
      --env ENVIRONMENT_FILE=".env" \
      ghcr.io/yapat-app/yapat:latest
 
