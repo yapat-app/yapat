@@ -2,7 +2,7 @@ Deployment
 ===========
 
 .. caution::
-   Under construction.
+   Under construction (pre-alpha stage)
 
 
 To deploy YAPAT using Docker and Gunicorn, follow these instructions to pull the Docker image and run it with Gunicorn.

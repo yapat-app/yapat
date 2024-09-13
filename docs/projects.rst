@@ -2,8 +2,7 @@ Projects
 ========
 
 .. caution::
-   Under construction.
-
+   Under construction (pre-alpha stage)
 
 YAPAT organizes data into projects. Here’s how to manage them:
 

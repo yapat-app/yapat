@@ -2,7 +2,7 @@ Visualization
 =============
 
 .. caution::
-   Under construction.
+   Under construction (pre-alpha stage)
 
 YAPAT offers an advanced interactive visualization suite. Features include:
 

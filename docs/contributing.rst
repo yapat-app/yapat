@@ -2,7 +2,7 @@ Contributing
 ============
 
 .. caution::
-   Under construction.
+   Under construction (pre-alpha stage)
 
 Thank you for your interest in contributing to YAPAT! We appreciate all contributions, whether they are code, documentation, or feedback. To get started with contributing, please follow these steps:
 

@@ -18,7 +18,7 @@ This is yet another PAM annotation tool
    :target: https://github.com/yapat-app/yapat/stargazers
 
 .. caution::
-   Under construction.
+   Under construction (pre-alpha stage)
 
 Designed for efficient analysis of PAM data, YAPAT utilizes machine learning to prioritize samples for expert annotation.
 The integrated visualization suite combines embedding, dimensionality reduction, and clustering for dynamic data exploration.

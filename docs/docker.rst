@@ -2,7 +2,7 @@ Running with Docker
 ===================
 
 .. caution::
-   Under construction.
+   Under construction (pre-alpha stage)
 
 To run the YAPAT application locally using Docker, follow these steps to pull and start the Docker container.
 

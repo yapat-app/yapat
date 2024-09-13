@@ -10,7 +10,7 @@ Annotation
 
 
 .. caution::
-   Under construction.
+   Under construction (pre-alpha stage)
 
 YAPAT assists in annotating PAM data by:
 
