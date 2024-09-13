@@ -1,9 +1,13 @@
 Annotation
 ==========
 
-.. image:: _static/yapat_screenshot.png
-   :alt: Screenshot of the annotation interface
+.. figure:: _static/yapat_screenshot.png
+   :alt: Annotation Interface
    :width: 600px
+   :align: center
+
+   Screenshot of the annotation interface
+
 
 .. caution::
    Under construction.
