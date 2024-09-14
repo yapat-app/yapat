@@ -72,7 +72,7 @@ def serve_layout():
                 dash.page_container,
                 class_name='my-2'
             ),
-            footer.footer
+            footer.layout
         ]
     )
 
