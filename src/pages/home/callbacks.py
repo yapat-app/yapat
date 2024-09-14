@@ -159,8 +159,10 @@ def update_project_summary(project_name):
         all_clips = glob.glob(os.path.join('projects', project_name, 'clips', '*.wav'))
         annotations = pd.read_csv(os.path.join('projects', project_name, 'annotations.csv'))
         n_labeled = len(annotations['sound_clip_url'].unique())
-        n_classes = len(annotations.columns)
-        children.append(html.P(f'Found {len(all_clips)} clips, {n_labeled} of which are labelled for {n_classes} class categories'))
+        n_classes = len(annotations['label'].unique())
+        msg = f'Found {len(all_clips)} clips, {n_labeled} of which are labelled for {n_classes} class categories'
+        if n_classes == 1: msg = msg.replace('categories', 'category')
+        children.append(html.P(msg))
         children.append(dcc.Link("Start annotating", href='/annotate'))
         children.append(html.P('Export project data'))
     return children

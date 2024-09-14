@@ -11,8 +11,9 @@ logger = logging.getLogger(__name__)
 
 dash.register_page(
     __name__,
-    path='/project',
-    title='Project | YAPAT'
+    path='/',
+    redirect_from=['/home'],
+    title='Home | YAPAT'
 )
 
 
@@ -21,9 +22,19 @@ def layout():
     layout = dbc.Container([
         html.Div([
             # Header
-            dbc.Row(
-                # ['Header']
-            ),
+            dbc.Row([
+                html.H1('Welcome to YAPAT'),
+                html.H6(["YAPAT is a smart annotation tool designed for passive acoustic monitoring data, ",
+                         "using machine learning for efficient labeling and discovery of new sounds."]),
+                html.P(["Select a project below, or start a new one. ",
+                        "Check the ",
+                        html.A("documentation", href="https://yapat.readthedocs.io/", target="_blank"),
+                        " for guidance."])
+                # html.Div(
+                #     html.A('Select a project or start a new one here.', href='/project')
+                # ),
+                # html.Div(id='content')
+            ]),
             # Main
             dbc.Row([
                 dbc.Col([
@@ -36,7 +47,7 @@ def layout():
                     ], class_name='my-4'),
                     dbc.Row([
                         html.Div([
-                            dbc.Button('Add', id='collapse-button', class_name='my-4'),
+                            dbc.Button('New project...', id='collapse-button', class_name='my-4'),
                             dbc.Collapse([
                                 html.Div([
                                     dbc.FormFloating([
@@ -78,6 +89,9 @@ def layout():
                     dbc.Row([
                         html.H5('Project summary'),
                     ], class_name='my-4', id='project-summary'),
+                    dbc.Row([
+                        # dbc.DropdownMenu()
+                    ], class_name='my-4')
                 ])
             ])
         ])
