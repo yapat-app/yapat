@@ -1,5 +1,6 @@
 # from flask_login import LoginManager
 import os
+import random
 
 import dash
 import dash_bootstrap_components as dbc
@@ -17,6 +18,8 @@ server = Flask(__name__)
 server.config.update(SECRET_KEY=os.getenv('SECRET_KEY'))
 server.config.update(SQLALCHEMY_DATABASE_URI='sqlite:///users.db')
 server.config.update(SQLALCHEMY_TRACK_MODIFICATIONS=False)
+server.secret_key = str(random.randint(a=0, b=1000000))
+
 
 login_manager = LoginManager(server)
 login_manager.init_app(server)
