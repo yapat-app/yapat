@@ -8,3 +8,4 @@ python-dotenv
 scikit-learn
 scikit-maad
 tensorflow
+soundfile
