@@ -5,24 +5,19 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import html, dcc, callback, Output, Input, State
 from dash.exceptions import PreventUpdate
-from flask import Flask
-from flask_login import LoginManager, UserMixin, login_user
-from flask_sqlalchemy import SQLAlchemy
+from flask_login import login_user
+from sqlalchemy.exc import SQLAlchemyError
 
 from components import navbar, footer
-from components.login import login_location  # , User
+from components.login import login_location
+from pages.explore.callbacks import update_db_methods
+from schema import User
+from src import login_manager, db, create_server
 from utils.settings import APP_HOST, APP_PORT, APP_DEBUG, DEV_TOOLS_PROPS_CHECK
 
-server = Flask(__name__)
-server.config.update(SECRET_KEY=os.getenv('SECRET_KEY'))
-server.config.update(SQLALCHEMY_DATABASE_URI='sqlite:///users.db')
-server.config.update(SQLALCHEMY_TRACK_MODIFICATIONS=False)
+logger = logging.getLogger(__name__)
 
-login_manager = LoginManager(server)
-login_manager.init_app(server)
-login_manager.login_view = 'login'
-
-db = SQLAlchemy(server)
+server = create_server()
 
 
 # Define User model
@@ -33,16 +28,24 @@ class User(db.Model, UserMixin):
 
 
 with server.app_context():
-    db.create_all()
+    db.create_all(bind_key=['user_db', 'pipeline_db'])
+    try:
+        add_methods = update_db_methods()
+        db.session.add_all(add_methods)
+        db.session.commit()
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logger.exception(e)
 
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    from schema import User  # Import your models
+    return db.session.execute(db.select(User).where(User.id == int(user_id))).scalar_one_or_none()
 
 
 app = dash.Dash(
-    __name__,
+    name="yapat",
     server=server,
     use_pages=True,  # turn on Dash pages
     external_stylesheets=[
