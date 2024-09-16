@@ -26,7 +26,7 @@ def layout():
                 html.H1('Welcome to YAPAT'),
                 html.H6(["YAPAT is a smart annotation tool designed for passive acoustic monitoring data, ",
                          "using machine learning for efficient labeling and discovery of new sounds."]),
-                html.P(["Select a project below, or start a new one. ",
+                html.P(["Select a dataset below, or start a new one. ",
                         "Check the ",
                         html.A("documentation", href="https://yapat.readthedocs.io/", target="_blank"),
                         " for guidance."])
@@ -39,21 +39,21 @@ def layout():
             dbc.Row([
                 dbc.Col([
                     dbc.Row([
-                        html.H5('Select project'),
+                        html.H5('Select dataset'),
                         dbc.RadioItems(
-                            id='project-list',
+                            id='dataset-list',
                             options=scan_projects(),
                         ),
                     ], class_name='my-4'),
                     dbc.Row([
                         html.Div([
-                            dbc.Button('New project...', id='collapse-button', class_name='my-4'),
+                            dbc.Button('New dataset...', id='collapse-button', class_name='my-4'),
                             dbc.Collapse([
                                 html.Div([
                                     dbc.FormFloating([
-                                        dbc.Input(placeholder="Type name of new project...", type="text",
-                                                  id="project-name"),
-                                        dbc.Label("Project name"),
+                                        dbc.Input(placeholder="Type name of new dataset...", type="text",
+                                                  id="dataset-name"),
+                                        dbc.Label("Dataset name"),
                                         dbc.FormFeedback('This name is already in use. Please select another one.',
                                                          type='invalid')
                                     ], class_name='my-1'),
@@ -72,6 +72,7 @@ def layout():
                                         {'label': 'Birdnet 2.4 (recommended)', 'value': 'birdnet'},
                                         {'label': 'Perch', 'value': 'perch', 'disabled': True},
                                         {'label': 'VAE', 'value': 'vae', 'disabled': True},
+                                        {'label': 'VAE', 'value': 'acoustic_indices', 'disabled': True}
                                     ],
                                     placeholder="Select embedding model", class_name='my-1', id='embedding-model'
                                 ),
@@ -87,8 +88,8 @@ def layout():
                 ], width=3),
                 dbc.Col([
                     dbc.Row([
-                        html.H5('Project summary'),
-                    ], class_name='my-4', id='project-summary'),
+                        html.H5('Dataset summary'),
+                    ], class_name='my-4', id='dataset-summary'),
                     dbc.Row([
                         # dbc.DropdownMenu()
                     ], class_name='my-4')

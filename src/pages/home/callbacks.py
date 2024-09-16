@@ -121,13 +121,13 @@ def gen_embeddings(project_name, embedding_model):
 
 # %%
 @callback(
-    Output('project-list', 'options'),
-    Output('project-list', 'value'),
+    Output('dataset-list', 'options'),
+    Output('dataset-list', 'value'),
     Output('project-content', 'data', allow_duplicate=True),
-    Input('project-list', 'value'),
+    Input('dataset-list', 'value'),
     Input('button-project-create', 'n_clicks'),
     State('navbar', 'brand'),
-    State('project-name', 'value'),
+    State('dataset-name', 'value'),
     State('audio-path', 'value'),
     State('embedding-model', 'value'),
     State('project-content', 'data'),
@@ -150,11 +150,11 @@ def update_options_project(project_value, project_create, brand, project_name, a
 
 
 @callback(
-    Output('project-summary', 'children'),
-    Input('project-list', 'value')
+    Output('dataset-summary', 'children'),
+    Input('dataset-list', 'value')
 )
 def update_project_summary(project_name):
-    children = [html.H5('Project summary')]
+    children = [html.H5('Dataset summary')]
     if project_name:
         all_clips = glob.glob(os.path.join('projects', project_name, 'clips', '*.wav'))
         annotations = pd.read_csv(os.path.join('projects', project_name, 'annotations.csv'))
@@ -170,7 +170,7 @@ def update_project_summary(project_name):
 
 @callback(
     Output('button-project-create', 'disabled'),
-    Input('project-name', 'valid'),
+    Input('dataset-name', 'valid'),
     Input('audio-path', 'valid'),
     Input('embedding-model', 'valid'),
 )
@@ -191,9 +191,9 @@ def toggle_collapse(n1, n2, is_open):
 
 
 @callback(
-    Output('project-name', 'valid'),
-    Output('project-name', 'invalid'),
-    Input('project-name', 'value')
+    Output('dataset-name', 'valid'),
+    Output('dataset-name', 'invalid'),
+    Input('dataset-name', 'value')
 )
 def check_project_name(value):
     if value:
@@ -227,7 +227,7 @@ def check_embedding_model(value):
 # layout = html.Div([
 #     html.Label('Select project'),
 #     dcc.Dropdown(
-#         id='project-list-dropdown',
+#         id='dataset-list-dropdown',
 #         options=[{'label': 'True', 'value': 'True'}, {'label': 'False', 'value': 'False'}],
 #         # value=debug_mode
 #     ),
