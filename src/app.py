@@ -1,5 +1,5 @@
 # from flask_login import LoginManager
-import os
+import logging
 
 import dash
 import dash_bootstrap_components as dbc
@@ -18,14 +18,6 @@ from utils.settings import APP_HOST, APP_PORT, APP_DEBUG, DEV_TOOLS_PROPS_CHECK
 logger = logging.getLogger(__name__)
 
 server = create_server()
-
-
-# Define User model
-class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(150), nullable=False)
-
 
 with server.app_context():
     db.create_all(bind_key=['user_db', 'pipeline_db'])
