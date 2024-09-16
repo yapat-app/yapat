@@ -4,8 +4,11 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import html
 
-from .callbacks import scan_projects
+from pages.home import callbacks
+# from .callbacks import scan_projects
 from .. import login_required_layout
+from pages.explore.callbacks import list_existing_methods
+
 
 logger = logging.getLogger(__name__)
 
@@ -42,17 +45,17 @@ def layout():
                         html.H5('Select dataset'),
                         dbc.RadioItems(
                             id='dataset-list',
-                            options=scan_projects(),
+                            options=[],
                         ),
                     ], class_name='my-4'),
                     dbc.Row([
                         html.Div([
-                            dbc.Button('New dataset...', id='collapse-button', class_name='my-4'),
+                            dbc.Button('New dataset...', id='btn-new-dataset', class_name='my-4'),
                             dbc.Collapse([
                                 html.Div([
                                     dbc.FormFloating([
                                         dbc.Input(placeholder="Type name of new dataset...", type="text",
-                                                  id="dataset-name"),
+                                                  id="dataset-name", debounce=True),
                                         dbc.Label("Dataset name"),
                                         dbc.FormFeedback('This name is already in use. Please select another one.',
                                                          type='invalid')
@@ -61,26 +64,21 @@ def layout():
                                 html.Div([
                                     dbc.FormFloating([
                                         dbc.Input(placeholder="Type path to directory containing audio files...",
-                                                  type="text",
-                                                  id='audio-path'),
+                                                  type="text", debounce=True, id='audio-path'),
                                         dbc.Label("Path to audio directory"),
                                         dbc.FormFeedback('Not a valid directory path', type='invalid')
                                     ], class_name='py-1'),
                                 ]),
                                 dbc.Select(
-                                    options=[
-                                        {'label': 'Birdnet 2.4 (recommended)', 'value': 'birdnet'},
-                                        {'label': 'Perch', 'value': 'perch', 'disabled': True},
-                                        {'label': 'VAE', 'value': 'vae', 'disabled': True},
-                                        {'label': 'VAE', 'value': 'acoustic_indices', 'disabled': True}
-                                    ],
+                                    options=[{'label': method, 'value': method} for method in
+                                     list_existing_methods('embeddings')],
                                     placeholder="Select embedding model", class_name='my-1', id='embedding-model'
                                 ),
                                 dbc.ButtonGroup([
                                     dbc.Button('Cancel', color='danger', id='button-project-cancel', class_name='mx-1'),
                                     dbc.Button('Create', id='button-project-create', class_name='mx-1')
                                 ], class_name='my-2')],
-                                id='collapse',
+                                id="collapse-new-dataset",
                                 is_open=False
                             )
                         ]),

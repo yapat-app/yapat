@@ -1,6 +1,6 @@
 import os
 
-from schema import ClusteringMethod, EmbeddingMethod, DimReductionMethod
+from schema import ClusteringMethod, EmbeddingMethod, DimReductionMethod, Dataset
 from src import db
 
 pipeline_steps = {
@@ -32,3 +32,9 @@ def list_existing_methods(package_name):
     existing_methods = db.session.execute(db.select(Table.method_name)).fetchall()
     existing_methods = [i[0] for i in existing_methods]
     return existing_methods
+
+
+def list_existing_datasets():
+    existing_datasets = db.session.execute(db.select(Dataset.dataset_name)).fetchall()
+    existing_datasets = [i[0] for i in existing_datasets]
+    return existing_datasets

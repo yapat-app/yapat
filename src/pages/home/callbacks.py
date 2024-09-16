@@ -9,8 +9,13 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from dash import html, callback, Input, Output, State, dcc
+from sqlalchemy.exc import SQLAlchemyError
 
 from pages import get_list_files, split_single_audio, load_audio_files_with_tf_dataset
+from pages.explore.callbacks import list_existing_datasets
+
+from src import db
+from schema import Dataset
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +39,7 @@ def init_project(project_name, audio_path, clip_duration, embedding_model):
         gen_tables(project_name)
         gen_clips(project_name, audio_path, clip_duration)
         gen_queue(project_name, n=10)
-        gen_embeddings(project_name, embedding_model)
+        # gen_embeddings(project_name, embedding_model)
     except Exception as e:
         logger.error(f"Failed to initialize project '{project_name}': {str(e)}")
         raise
@@ -133,16 +138,23 @@ def gen_embeddings(project_name, embedding_model):
     State('project-content', 'data'),
     prevent_initial_call=True
 )
-def update_options_project(project_value, project_create, brand, project_name, audio_path, embedding_model, data):
+def update_options_project(project_value, project_create, brand, project_name, path_audio, embedding_model, data):
     if dash.ctx.triggered_id == 'button-project-create':
-        clip_duration = 3 if embedding_model == 'birdnet' else None  # Clip duration in seconds
+        try:
+            db.session.add(Dataset(dataset_name=project_name, path_audio=path_audio))
+            db.session.commit()
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            logger.exception(e)
+
+        # clip_duration = 3 if embedding_model == 'birdnet' else None  # Clip duration in seconds
         project_value = project_name
-        init_project(project_name, audio_path, clip_duration, embedding_model)
+        # init_project(project_name, path_audio, clip_duration, embedding_model)
         # TODO Queue initialization tasks, inform when ready
     elif data.get('project_name') and not project_value:
         project_value = data['project_name']
 
-    options = scan_projects()
+    options = [{'label': x, 'value': x} for x in list_existing_datasets()]
     data['project_name'] = project_value
     data['current_sample'] = ''
 
@@ -155,16 +167,16 @@ def update_options_project(project_value, project_create, brand, project_name, a
 )
 def update_project_summary(project_name):
     children = [html.H5('Dataset summary')]
-    if project_name:
-        all_clips = glob.glob(os.path.join('projects', project_name, 'clips', '*.wav'))
-        annotations = pd.read_csv(os.path.join('projects', project_name, 'annotations.csv'))
-        n_labeled = len(annotations['sound_clip_url'].unique())
-        n_classes = len(annotations['label'].unique())
-        msg = f'Found {len(all_clips)} clips, {n_labeled} of which are labelled for {n_classes} class categories'
-        if n_classes == 1: msg = msg.replace('categories', 'category')
-        children.append(html.P(msg))
-        children.append(dcc.Link("Start annotating", href='/annotate'))
-        children.append(html.P('Export project data'))
+    # if project_name:
+    #     all_clips = glob.glob(os.path.join('projects', project_name, 'clips', '*.wav'))
+    #     annotations = pd.read_csv(os.path.join('projects', project_name, 'annotations.csv'))
+    #     n_labeled = len(annotations['sound_clip_url'].unique())
+    #     n_classes = len(annotations['label'].unique())
+    #     msg = f'Found {len(all_clips)} clips, {n_labeled} of which are labelled for {n_classes} class categories'
+    #     if n_classes == 1: msg = msg.replace('categories', 'category')
+    #     children.append(html.P(msg))
+    #     children.append(dcc.Link("Start annotating", href='/annotate'))
+    #     children.append(html.P('Export project data'))
     return children
 
 
@@ -179,10 +191,10 @@ def check_create(v1, v2, v3):
 
 
 @callback(
-    Output("collapse", "is_open"),
-    Input("collapse-button", "n_clicks"),
+    Output("collapse-new-dataset", "is_open"),
+    Input("btn-new-dataset", "n_clicks"),
     Input("button-project-cancel", "n_clicks"),
-    State("collapse", "is_open"),
+    State("collapse-new-dataset", "is_open"),
 )
 def toggle_collapse(n1, n2, is_open):
     if n1 or n2:
@@ -197,7 +209,7 @@ def toggle_collapse(n1, n2, is_open):
 )
 def check_project_name(value):
     if value:
-        is_valid = value not in os.listdir('projects')
+        is_valid = value not in list_existing_datasets()
         return is_valid, not is_valid
     return False, False
 

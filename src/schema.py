@@ -23,7 +23,8 @@ class Dataset(db.Model):
     __bind_key__ = "pipeline_db"
 
     dataset_id = Column(Integer, primary_key=True)
-    dataset_name = Column(String(255), nullable=False)
+    dataset_name = Column(String(255), unique=True, nullable=False)
+    path_audio = Column(String(255), unique=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
