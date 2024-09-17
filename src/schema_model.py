@@ -4,8 +4,7 @@ from flask_login import UserMixin
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import relationship, backref
 
-# Base = declarative_base()
-from src import db
+from src.extensions import db
 
 
 # Define User model
@@ -118,3 +117,5 @@ class DimReductionResult(db.Model):
                                      backref=backref('dim_reduction_results', lazy=True))
     method = relationship('DimReductionMethod',
                           backref=backref('dim_reduction_results', lazy=True))
+
+# TODO Add "task_state" field to all results tables

@@ -10,17 +10,15 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from components import navbar, footer
 from components.login import login_location
-from pages.explore.callbacks import update_db_methods
-from schema import User
-from src import login_manager, db, create_server
+from src import login_manager, db, create_app
+from utils.db_operations import update_db_methods
 from utils.settings import APP_HOST, APP_PORT, APP_DEBUG, DEV_TOOLS_PROPS_CHECK
 
 logger = logging.getLogger(__name__)
 
-server = create_server()
+app, celery = create_app()
 
-with server.app_context():
-    db.create_all(bind_key=['user_db', 'pipeline_db'])
+with app.app_context():
     try:
         add_methods = update_db_methods()
         db.session.add_all(add_methods)
@@ -32,21 +30,8 @@ with server.app_context():
 
 @login_manager.user_loader
 def load_user(user_id):
-    from schema import User  # Import your models
+    from schema_model import User  # Import your models
     return db.session.execute(db.select(User).where(User.id == int(user_id))).scalar_one_or_none()
-
-
-app = dash.Dash(
-    name="yapat",
-    server=server,
-    use_pages=True,  # turn on Dash pages
-    external_stylesheets=[
-        dbc.themes.BOOTSTRAP,
-        dbc.icons.FONT_AWESOME
-    ],
-    suppress_callback_exceptions=True,
-    title='YAPAT | yet another PAM annotation tool'
-)
 
 
 def serve_layout():

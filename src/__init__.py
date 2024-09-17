@@ -1,15 +1,17 @@
+import logging
 import os
 
+import dash_bootstrap_components as dbc
+from dash import Dash
 from flask import Flask
-from flask_login import LoginManager
-from flask_sqlalchemy import SQLAlchemy
 
-# Initialize extensions
-db = SQLAlchemy()
-login_manager = LoginManager()
+from src.extensions import db, login_manager
+from src.tasks import make_celery
+
+logger = logging.getLogger(__name__)
 
 
-def create_server():
+def create_app():
     # Create the Flask app
     server = Flask('yapat')
 
@@ -27,13 +29,21 @@ def create_server():
     login_manager.init_app(server)
     login_manager.login_view = 'login'
 
-    # Import models and routes within the function to avoid circular imports
+    # Initialize Celery with the Flask app
+    celery = make_celery(server)
+
+    # Create Dash app and link it to Flask
+    app = Dash(
+        name='yapat',
+        server=server,
+        use_pages=True,  # Enable Dash pages
+        external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
+        suppress_callback_exceptions=True,
+        title='YAPAT | Yet Another PAM Annotation Tool'
+    )
+
     with server.app_context():
-        # from src.schema import User  # Import models inside the function
+        # Create all database tables
         db.create_all(bind_key=['user_db', 'pipeline_db'])  # Create tables
 
-    # # Register routes (blueprints) here
-    # from your_app.routes import main_blueprint  # Adjust based on your routes
-    # server.register_blueprint(main_blueprint)
-
-    return server
+    return app, celery

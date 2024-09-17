@@ -8,14 +8,13 @@ import dash
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from dash import html, callback, Input, Output, State, dcc
+from dash import html, callback, Input, Output, State
 from sqlalchemy.exc import SQLAlchemyError
 
 from pages import get_list_files, split_single_audio, load_audio_files_with_tf_dataset
 from pages.explore.callbacks import list_existing_datasets
 
 from src import db
-from schema import Dataset
 
 logger = logging.getLogger(__name__)
 
