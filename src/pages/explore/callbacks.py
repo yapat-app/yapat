@@ -1,6 +1,6 @@
 import os
 
-from schema import ClusteringMethod, EmbeddingMethod, DimReductionMethod, Dataset
+from schema_model import ClusteringMethod, EmbeddingMethod, DimReductionMethod, Dataset
 from src import db
 
 pipeline_steps = {

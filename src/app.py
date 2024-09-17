@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 app, celery = create_app()
 
-with app.app_context():
+with app.server.app_context():
     try:
         add_methods = update_db_methods()
         db.session.add_all(add_methods)
