@@ -1,7 +1,9 @@
-dash
-dash-bootstrap-components
 Flask-Login
 Flask-SQLAlchemy
+SQLAlchemy
+celery
+dash
+dash-bootstrap-components
 flask
 gunicorn
 librosa
@@ -9,10 +11,10 @@ numpy
 pandas
 plotly
 python-dotenv
+redis
 scikit-learn
 scikit-maad
 scipy
 soundfile
-SQLAlchemy
 tensorflow
 werkzeug
