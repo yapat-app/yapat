@@ -11,9 +11,9 @@ import tensorflow as tf
 from dash import html, callback, Input, Output, State
 from sqlalchemy.exc import SQLAlchemyError
 
-from pages import get_list_files, split_single_audio, load_audio_files_with_tf_dataset
-from pages.explore.callbacks import list_existing_datasets
-
+# from pages import get_list_files, split_single_audio, load_audio_files_with_tf_dataset
+from utils.db_operations import list_existing_datasets
+from schema_model import Dataset
 from src import db
 
 logger = logging.getLogger(__name__)
