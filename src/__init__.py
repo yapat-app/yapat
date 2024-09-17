@@ -15,14 +15,19 @@ def create_app():
     # Create the Flask app
     server = Flask('yapat')
 
-    # Configuration
-    server.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///main.db'
-    server.config['SQLALCHEMY_BINDS'] = {
-        'user_db': 'sqlite:///user_management.db',  # Database for user access
-        'pipeline_db': 'sqlite:///pipeline_data.db'  # Database for ML pipeline
-    }
-    server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    server.config.update(SECRET_KEY=os.getenv('SECRET_KEY'))
+    # Configure Flask server
+    server.config.update(
+        SECRET_KEY=os.getenv('SECRET_KEY'),
+        SQLALCHEMY_DATABASE_URI='sqlite:///main.db',
+        SQLALCHEMY_BINDS={
+            'user_db': 'sqlite:///user_management.db',
+            'pipeline_db': 'sqlite:///pipeline_data.db'
+        },
+        SQLALCHEMY_TRACK_MODIFICATIONS=False,
+        # Celery Configuration
+        CELERY_BROKER_URL='redis://localhost:6379/0',
+        CELERY_RESULT_BACKEND='redis://localhost:6379/0'
+    )
 
     # Initialize extensions with the app
     db.init_app(server)
