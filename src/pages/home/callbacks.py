@@ -15,6 +15,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from utils.db_operations import list_existing_datasets
 from schema_model import Dataset
 from src import db
+from src.celery_tasks import compute_embeddings, register_dataset
 
 logger = logging.getLogger(__name__)
 
@@ -139,15 +140,11 @@ def gen_embeddings(project_name, embedding_model):
 )
 def update_options_project(project_value, project_create, brand, project_name, path_audio, embedding_model, data):
     if dash.ctx.triggered_id == 'button-project-create':
-        try:
-            db.session.add(Dataset(dataset_name=project_name, path_audio=path_audio))
-            db.session.commit()
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            logger.exception(e)
+        register_dataset(dataset_name=project_name, path_audio=path_audio)
 
         # clip_duration = 3 if embedding_model == 'birdnet' else None  # Clip duration in seconds
         project_value = project_name
+        compute_embeddings()
         # init_project(project_name, path_audio, clip_duration, embedding_model)
         # TODO Queue initialization tasks, inform when ready
     elif data.get('project_name') and not project_value:

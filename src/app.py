@@ -3,22 +3,21 @@ import logging
 
 import dash
 import dash_bootstrap_components as dbc
-from dash import html, dcc, callback, Output, Input, State
+from dash import html, dcc, callback, Output, Input, State, Dash
 from dash.exceptions import PreventUpdate
 from flask_login import login_user
 from sqlalchemy.exc import SQLAlchemyError
 
 from components import navbar, footer
 from components.login import login_location
-from src import login_manager, db, create_app
+from schema_model import User
+from src import login_manager, db, server
 from utils.db_operations import update_db_methods
 from utils.settings import APP_HOST, APP_PORT, APP_DEBUG, DEV_TOOLS_PROPS_CHECK
 
 logger = logging.getLogger(__name__)
 
-app, celery = create_app()
-
-with app.server.app_context():
+with server.app_context():
     try:
         add_methods = update_db_methods()
         db.session.add_all(add_methods)
@@ -26,6 +25,16 @@ with app.server.app_context():
     except SQLAlchemyError as e:
         db.session.rollback()
         logger.exception(e)
+
+# Create Dash app and link it to Flask
+app = Dash(
+    name='yapat',
+    server=server,
+    use_pages=True,  # Enable Dash pages
+    external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
+    suppress_callback_exceptions=True,
+    title='YAPAT | Yet Another PAM Annotation Tool'
+)
 
 
 @login_manager.user_loader
