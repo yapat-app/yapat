@@ -21,7 +21,7 @@ class Dataset(db.Model):
     __tablename__ = 'datasets'
     __bind_key__ = "pipeline_db"
 
-    dataset_id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
     dataset_name = Column(String(255), unique=True, nullable=False)
     path_audio = Column(String(255), unique=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -29,25 +29,23 @@ class Dataset(db.Model):
 
 # 2. Embedding Methods Table
 class EmbeddingMethod(db.Model):
-    __tablename__ = 'embeddings'
+    __tablename__ = 'embedding_methods'
     __bind_key__ = "pipeline_db"
 
-    method_id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
     method_name = Column(String(255), unique=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
-# 3. Embeddings Table
+# 3. Embeddings Results Table
 class EmbeddingResult(db.Model):
     __tablename__ = 'embedding_results'
     __bind_key__ = "pipeline_db"
 
-    embedding_id = Column(Integer, primary_key=True)
-    dataset_id = Column(Integer, ForeignKey('datasets.dataset_id'), nullable=False)
-    method_id = Column(Integer, ForeignKey('embeddings.method_id'),
-                       nullable=False)
-    embedding_file_path = Column(String(255),
-                                 nullable=False)  # Store path to the embedding file
+    id = Column(Integer, primary_key=True)
+    dataset_id = Column(Integer, ForeignKey('datasets.id'), nullable=False)
+    embedding_id = Column(Integer, ForeignKey('embedding_methods.id'), nullable=False)
+    file_path = Column(String(255), nullable=False)  # Store path to the embedding file
     hyperparameters = Column(JSON, nullable=True)  # Hyperparameters stored as JSON
     created_at = Column(DateTime, default=datetime.utcnow)
 
