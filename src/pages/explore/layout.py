@@ -2,7 +2,7 @@ import logging
 
 import dash
 import dash_bootstrap_components as dbc
-from dash import html, Input, Output, State, callback
+from dash import html, dcc
 
 from .callbacks import list_existing_methods
 from .. import login_required_layout
@@ -70,42 +70,41 @@ def layout():
             dbc.Modal(
                 [
                     dbc.ModalHeader(dbc.ModalTitle("New pipeline")),
-                    dbc.ModalBody(children=[
 
-                        "Choose a representation space",
-                        dbc.Select(
+                    dbc.ModalBody(children=[
+                        html.P("Representation space"),
+                        dcc.Dropdown(
                             options=[{'label': method, 'value': method} for method in
                                      list_existing_methods('embeddings')],
-                            value='birdnet',
-                            placeholder="Select embedding", class_name='my-1', id="methods-embedding"
+                            value='birdnet', multi=True,
+                            placeholder="Select embedding", id="methods-embedding",
                         ),
-
-                        "Pre-clustering dimensionality reduction",
-                        dbc.Select(
-                            options=[{'label': method, 'value': method} for method in
-                                     list_existing_methods('dimensionality_reduction')] + [
-                                        {'label': 'None', 'value': None}],
-                            value='None',
-                            placeholder="Select pre-clustering reduction", class_name='my-1', id='new-preclust-reduct'
-                        ),
-
-                        "Clustering",
-                        dbc.Select(
+                        # html.P("Pre-clustering dimensionality reduction"),
+                        # dcc.Dropdown(
+                        #     options=[{'label': method, 'value': method} for method in
+                        #              list_existing_methods('dimensionality_reduction')] + [
+                        #                 {'label': 'None', 'value': 'None'}],
+                        #     value='None', multi=True,
+                        #     placeholder="Select pre-clustering reduction", id='new-preclust-reduct'
+                        # ),
+                        html.P("Clustering"),
+                        dcc.Dropdown(
                             options=[{'label': method, 'value': method} for method in
                                      list_existing_methods('clustering')],
-                            value='kmeans',
-                            placeholder="Select clustering method", class_name='my-1', id='new-clustering'
+                            value='kmeans', multi=True,
+                            placeholder="Select clustering method", id='methods-clustering'
                         ),
-
-                        "Post-clustering dimensionality reduction",
-                        dbc.Select(
+                        html.P("Dimensionality reduction (for vizualization)"),
+                        dcc.Dropdown(
                             options=[{'label': method, 'value': method} for method in
                                      list_existing_methods('dimensionality_reduction')],
-                            value='umap',
-                            placeholder="Select post-clustering reduction", class_name='my-1', id='new-postclust-reduct'
+                            value='umap', multi=True,
+                            placeholder="Select post-clustering reduction", id='methods-dimred-viz'
                         )
                     ], id="new-pipeline-modal-body"),
+
                     dbc.ModalFooter([
+                        html.P(id='new-pipeline-summary'),
                         dbc.ButtonGroup([
                             dbc.Button("Cancel", id="cancel-new-pipeline", n_clicks=0, color="secondary"),
                             dbc.Button("Create", id="create-pipeline", n_clicks=0, color="primary"),
@@ -120,25 +119,3 @@ def layout():
         ])
     ])
     return layout
-
-
-# def new_pipeline_modal_body():
-#     children =
-#     return children
-
-
-@callback(
-    Output("modal-pipeline", "is_open"),
-    Input("new-pipeline", "n_clicks"),
-    Input("cancel-new-pipeline", "n_clicks"),
-    [State("modal-pipeline", "is_open")],
-)
-def toggle_modal(btn_new, btn_cancel, is_open):
-    if btn_new or btn_cancel:
-        is_open = not is_open
-    return is_open
-
-# @callback(
-#     Output("summary-pipeline", "children"),
-#     "methods-embedding", "new-preclust-reduct", "new-clustering", "new-postclust-reduct"
-# )
