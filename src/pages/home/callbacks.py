@@ -9,14 +9,12 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from dash import html, callback, Input, Output, State
-from sqlalchemy.exc import SQLAlchemyError
 
+from embeddings import register_dataset
+from schema_model import Dataset
+from src import db, server
 # from pages import get_list_files, split_single_audio, load_audio_files_with_tf_dataset
 from utils.db_operations import list_existing_datasets
-from schema_model import Dataset
-from src import db
-from embeddings import compute_embeddings, register_dataset
-from extensions import dask_client
 
 logger = logging.getLogger(__name__)
 
@@ -143,12 +141,7 @@ def update_options_project(project_value, project_create, brand, project_name, p
     if dash.ctx.triggered_id == 'button-project-create':
         # dask_client.submit(register_dataset, dataset_name=project_name, path_audio=path_audio)
         register_dataset(dataset_name=project_name, path_audio=path_audio)
-
-        # clip_duration = 3 if embedding_model == 'birdnet' else None  # Clip duration in seconds
         project_value = project_name
-        compute_embeddings(dataset_name=project_name, embedding_method=embedding_model)
-        # init_project(project_name, path_audio, clip_duration, embedding_model)
-        # TODO Queue initialization tasks, inform when ready
     elif data.get('project_name') and not project_value:
         project_value = data['project_name']
 
@@ -163,16 +156,21 @@ def update_options_project(project_value, project_create, brand, project_name, p
     Output('dataset-summary', 'children'),
     Input('dataset-list', 'value')
 )
-def update_project_summary(project_name):
+def update_project_summary(dataset_name):
     children = [html.H5('Dataset summary')]
-    # if project_name:
-    #     all_clips = glob.glob(os.path.join('projects', project_name, 'clips', '*.wav'))
+    if dataset_name:
+        with server.app_context():
+            path_dataset = db.session.execute(
+                db.select(Dataset.path_audio).where(Dataset.dataset_name == dataset_name)).scalar_one_or_none()
+        all_clips = glob.glob(os.path.join(path_dataset, '**', '*.wav'), recursive=True)
     #     annotations = pd.read_csv(os.path.join('projects', project_name, 'annotations.csv'))
     #     n_labeled = len(annotations['sound_clip_url'].unique())
     #     n_classes = len(annotations['label'].unique())
-    #     msg = f'Found {len(all_clips)} clips, {n_labeled} of which are labelled for {n_classes} class categories'
-    #     if n_classes == 1: msg = msg.replace('categories', 'category')
-    #     children.append(html.P(msg))
+        n_labeled = '[UNK]'
+        n_classes = '[UNK]'
+        msg = f'Found {len(all_clips)} audio files, {n_labeled} of which are labelled for {n_classes} class categories'
+        if n_classes == 1: msg = msg.replace('categories', 'category')
+        children.append(html.P(msg))
     #     children.append(dcc.Link("Start annotating", href='/annotate'))
     #     children.append(html.P('Export project data'))
     return children
