@@ -43,7 +43,7 @@ class BirdnetEmbedding(BaseEmbedding):
         Load the BirdNet-specific model, using a TensorFlow SMLayer for generating embeddings.
         """
         # Load the BirdNet model from the specified path and set it up to generate embeddings.
-        self.model = tf.keras.layers.TFSMLayer('assets/models/BirdNET-Analyzer-V2.4/V2.4/BirdNET_GLOBAL_6K_V2.4_Model',
+        self.model = tf.keras.layers.TFSMLayer('assets/models/birdnet/V2.4/BirdNET_GLOBAL_6K_V2.4_Model',
                                                call_endpoint='embeddings')
 
     def process(self, dataset_name: str, extension: str = '.wav', sampling_rate: int = 48000):
