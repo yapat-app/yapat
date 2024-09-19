@@ -21,9 +21,6 @@ def create_server():
             'pipeline_db': 'sqlite:///pipeline_data.db'
         },
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
-        # Celery Configuration
-        CELERY_BROKER_URL='redis://localhost:6379/0',
-        CELERY_RESULT_BACKEND='redis://localhost:6379/0'
     )
 
     # Initialize extensions with the app
