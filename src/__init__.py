@@ -31,10 +31,6 @@ def create_server():
     login_manager.init_app(server)
     login_manager.login_view = 'login'
 
-    with server.app_context():
-        # Create all database tables
-        db.create_all(bind_key=['user_db', 'pipeline_db'])  # Create tables
-
     return server
 
 

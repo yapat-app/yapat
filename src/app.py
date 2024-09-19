@@ -1,4 +1,3 @@
-# from flask_login import LoginManager
 import logging
 
 import dash
@@ -17,56 +16,42 @@ from utils.settings import APP_HOST, APP_PORT, APP_DEBUG, DEV_TOOLS_PROPS_CHECK
 
 logger = logging.getLogger(__name__)
 
-with server.app_context():
-    try:
-        add_methods = update_db_methods()
-        db.session.add_all(add_methods)
-        db.session.commit()
-    except SQLAlchemyError as e:
-        db.session.rollback()
-        logger.exception(e)
 
-# Create Dash app and link it to Flask
-app = Dash(
-    name='yapat',
-    server=server,
-    use_pages=True,  # Enable Dash pages
-    external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
-    suppress_callback_exceptions=True,
-    title='YAPAT | Yet Another PAM Annotation Tool'
-)
+def create_app(name='yapat', server=server, title='YAPAT | Yet Another PAM Annotation Tool'):
+    """Create the Dash app and link it to Flask."""
+    app = Dash(
+        name=name,
+        server=server,
+        use_pages=True,
+        external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
+        suppress_callback_exceptions=True,
+        title=title
+    )
+    app.layout = serve_layout
+    return app
 
 
 @login_manager.user_loader
 def load_user(user_id):
-    from schema_model import User  # Import your models
+    """Load the user by their ID."""
     return db.session.execute(db.select(User).where(User.id == int(user_id))).scalar_one_or_none()
 
 
 def serve_layout():
-    """Define the layout of the application"""
+    """Define the layout of the application."""
     return html.Div(
         [
             login_location,
             navbar.navbar,
             dcc.Store(
                 id='project-content',
-                data={
-                    'project_name': '',
-                    'current_sample': '',
-                },
+                data={'project_name': '', 'current_sample': ''},
                 storage_type='session'
             ),
-            dbc.Container(
-                dash.page_container,
-                class_name='my-2'
-            ),
+            dbc.Container(dash.page_container, class_name='my-2'),
             footer.layout
         ]
     )
-
-
-app.layout = serve_layout
 
 
 @callback(
@@ -79,6 +64,7 @@ app.layout = serve_layout
     prevent_initial_call=True
 )
 def login_button_click(n_clicks, username, password, pathname):
+    """Handle login button click."""
     if n_clicks > 0:
         user = User.query.filter_by(username=username).first()
         from werkzeug.security import check_password_hash
@@ -89,13 +75,14 @@ def login_button_click(n_clicks, username, password, pathname):
     raise PreventUpdate
 
 
-@app.callback(
+@callback(
     Output('register-feedback', 'children'),
     Input('register-button', 'n_clicks'),
     State('register-username', 'value'),
     State('register-password', 'value')
 )
 def register_user(n_clicks, username, password):
+    """Handle user registration."""
     if n_clicks > 0:
         if not username or not password:
             return "Username and password cannot be empty."
@@ -115,12 +102,15 @@ def register_user(n_clicks, username, password):
         db.session.commit()
 
         return html.A("User registered successfully. Login here", href='/login')
-
     return ""
 
 
-def main():
-    """Entry point for the Dash app"""
+# Prevent app from running on Dask workers by using a main check
+if __name__ == "__main__":
+    # Only initialize the Dash app if this script is the entry point
+    app = create_app()
+
+    # Run the Dash app
     app.run_server(
         host=APP_HOST,
         port=APP_PORT,
@@ -128,6 +118,13 @@ def main():
         dev_tools_props_check=DEV_TOOLS_PROPS_CHECK
     )
 
-
-if __name__ == "__main__":
-    main()
+    # Any additional initialization (such as database operations) should be kept in the main block
+    with server.app_context():
+        db.create_all(bind_key=['user_db', 'pipeline_db'])  # Create tables
+        try:
+            add_methods = update_db_methods()
+            db.session.add_all(add_methods)
+            db.session.commit()
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            logger.exception(e)
