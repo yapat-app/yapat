@@ -146,7 +146,7 @@ def update_options_project(project_value, project_create, brand, project_name, p
 
         # clip_duration = 3 if embedding_model == 'birdnet' else None  # Clip duration in seconds
         project_value = project_name
-        compute_embeddings()
+        compute_embeddings(dataset_name=project_name, embedding_method=embedding_model)
         # init_project(project_name, path_audio, clip_duration, embedding_model)
         # TODO Queue initialization tasks, inform when ready
     elif data.get('project_name') and not project_value:

@@ -1,11 +1,9 @@
 import logging
 import os
 
-import dash_bootstrap_components as dbc
-from dash import Dash
 from flask import Flask
 
-from src.extensions import db, login_manager, make_celery
+from extensions import db, login_manager
 
 logger = logging.getLogger(__name__)
 
@@ -36,9 +34,6 @@ def create_server():
     with server.app_context():
         # Create all database tables
         db.create_all(bind_key=['user_db', 'pipeline_db'])  # Create tables
-
-    # # Initialize Celery with the Flask server
-    # celery = make_celery(server)
 
     return server
 

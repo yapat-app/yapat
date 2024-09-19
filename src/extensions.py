@@ -1,26 +1,30 @@
-from celery import Celery
+import logging
+
+from dask.distributed import LocalCluster, Client, get_worker
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 
-# Initialize extensions without binding to the app yet
+from utils import check_socket
+
+logger = logging.getLogger(__name__)
+
+# Initialize the database extension (SQLAlchemy) without binding it to a Flask app yet.
+# This allows the database to be configured and attached later when the app is created.
 db = SQLAlchemy()
+
+# Initialize the login manager extension (Flask-Login) without binding it to the app.
+# This will manage user session handling, such as login and logout.
 login_manager = LoginManager()
 
+if __name__ == 'extensions':
+    host = 'localhost'
+    port = 8786
 
-def make_celery(server):
-    celery = Celery(
-        "celery_" + server.import_name,
-        backend=server.config['CELERY_RESULT_BACKEND'],
-        broker=server.config['CELERY_BROKER_URL']
-    )
-
-    # celery.conf.update(server.config)
-
-    # Ensure tasks are run within the server context
-    class ContextTask(celery.Task):
-        def __call__(self, *args, **kwargs):
-            with server.app_context():
-                return self.run(*args, **kwargs)
-
-    celery.Task = ContextTask
-    return celery
+    if check_socket(host, port):
+        dask_client = Client(":".join([host, str(port)]))
+        logger.info("Connected to existing Dask client")
+    else:
+        # cluster = LocalCluster(name='yapat_dask', n_workers=4, scheduler_port=8786, dashboard_address=':8787')
+        cluster = LocalCluster(name='yapat_dask', n_workers=4, scheduler_port=port, dashboard_address=':8787')
+        dask_client = Client(cluster)
+        logger.info("Created new Dask client")
