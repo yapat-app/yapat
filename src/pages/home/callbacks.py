@@ -15,7 +15,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from utils.db_operations import list_existing_datasets
 from schema_model import Dataset
 from src import db
-from src.celery_tasks import compute_embeddings, register_dataset
+from embeddings import compute_embeddings, register_dataset
+from extensions import dask_client
 
 logger = logging.getLogger(__name__)
 
@@ -140,6 +141,7 @@ def gen_embeddings(project_name, embedding_model):
 )
 def update_options_project(project_value, project_create, brand, project_name, path_audio, embedding_model, data):
     if dash.ctx.triggered_id == 'button-project-create':
+        # dask_client.submit(register_dataset, dataset_name=project_name, path_audio=path_audio)
         register_dataset(dataset_name=project_name, path_audio=path_audio)
 
         # clip_duration = 3 if embedding_model == 'birdnet' else None  # Clip duration in seconds
