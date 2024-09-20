@@ -3,6 +3,7 @@ import itertools
 import logging
 import os
 from importlib import import_module
+import re
 
 import dask
 import librosa
@@ -43,24 +44,30 @@ def _split_audio_into_chunks(filename: str, chunk_duration: float, sampling_rate
     """
     # Load the audio file with librosa
     audio, sampling_rate = librosa.load(filename, sr=sampling_rate)
+    total_duration = len(audio) / sampling_rate
+    # Checks for pattern like anura data set
+    pattern_with_seconds = r'.*_\d{6,8}_\d{6}_\d{1,3}_\d{1,3}\.\w{3}'
 
-    # Ensure the length is a multiple of the chunk size by truncating the extra samples
-    chunk_size = sampling_rate * chunk_duration
-    audio = audio[:len(audio) // chunk_size * chunk_size]
+    if abs(total_duration - chunk_duration) < 0.1:
+        if re.match(pattern_with_seconds, filename):
+            print('yes')
+            return pd.DataFrame({"filename": [filename], "audio_data":[audio]}).set_index("filename")
+    else:
+        chunk_size = sampling_rate * chunk_duration
+        audio = audio[:len(audio) // chunk_size * chunk_size]
+        # Split the audio into non-overlapping chunks
+        chunked_audio = np.split(audio, len(audio) // chunk_size)
+        # Generate filenames for each chunk
+        prefix, suffix = filename.rsplit('.', 1)
+        indices = [f"{prefix}_{i * chunk_duration}_{(i + 1) * chunk_duration:.0f}.{suffix}" for i in
+                   range(len(chunked_audio))]
+        # Create a DataFrame with chunked filenames and corresponding audio data
+        df = pd.DataFrame({"filename": indices, "audio_data": chunked_audio})
+        df.set_index("filename", inplace=True)
+        return df
 
-    # Split the audio into non-overlapping chunks
-    chunked_audio = np.split(audio, len(audio) // chunk_size)
 
-    # Generate filenames for each chunk
-    prefix, suffix = filename.rsplit('.', 1)
-    indices = [f"{prefix}_{i * chunk_duration}_{(i + 1) * chunk_duration:.0f}.{suffix}" for i in
-               range(len(chunked_audio))]
 
-    # Create a DataFrame with chunked filenames and corresponding audio data
-    df = pd.DataFrame({"filename": indices, "audio_data": chunked_audio})
-    df.set_index("filename", inplace=True)
-
-    return df
 
 
 class BaseEmbedding:
@@ -121,8 +128,8 @@ class BaseEmbedding:
         """
         raise NotImplementedError("This method should be implemented by subclasses")
 
-    def read_audio_dataset(self, dataset_name: str, extension: str = '.wav', chunk_duration: float = 3,
-                           sampling_rate: int = 48000, flask_server=None) -> pd.DataFrame:
+    def read_audio_dataset(self, dataset_name: str,
+                           sampling_rate: int = 48000, chunk_duration : float=3, flask_server=None) -> pd.DataFrame:
         """
                 Read the dataset of audio files, and optionally process it using Dask for parallelization.
 
@@ -133,13 +140,23 @@ class BaseEmbedding:
                 :param sampling_rate: The sampling rate for the audio files (default is 48,000).
                 :return: A pandas DataFrame containing audio file paths and any other relevant metadata.
                 """
+        # For standalone testing without flask. Will remove after embeddings test
+        if flask_server:
+            with flask_server.app_context():
+                path_dataset = sqlalchemy_db.session.execute(sqlalchemy_db.select(Dataset.path_audio).where(
+                    Dataset.dataset_name == dataset_name)).scalar_one_or_none()
+        else:
+            path_dataset = '/Users/ridasaghir/Desktop/data/anura_subset'
         # Fetch the path to the dataset from the database using a Flask app context.
-        with flask_server.app_context():
-            path_dataset = sqlalchemy_db.session.execute(sqlalchemy_db.select(Dataset.path_audio).where(
-                Dataset.dataset_name == dataset_name)).scalar_one_or_none()
-
-        # Recursively find all audio files in the dataset with the specified extension.
-        list_of_audio_files = glob.glob(os.path.join(path_dataset, '**', '*.' + extension.lstrip('.')), recursive=True)
+        # with flask_server.app_context():
+        #     path_dataset = sqlalchemy_db.session.execute(sqlalchemy_db.select(Dataset.path_audio).where(
+        #         Dataset.dataset_name == dataset_name)).scalar_one_or_none()
+        extensions = ['wav', 'aac', 'm4a', 'flac', 'mp3']
+        list_of_audio_files = []
+        for extension in extensions:
+            audio_files = glob.glob(os.path.join(path_dataset, '**', '*.' + extension.lstrip('.')),
+                                            recursive=True)
+            list_of_audio_files.extend(audio_files)
 
         # If a Dask client is provided, parallelize the audio chunking process using Dask.
         if self.dask_client is not None:
@@ -149,6 +166,7 @@ class BaseEmbedding:
             df_audio = pd.concat(self.dask_client.gather(dfs_audio))  # Concatenate the results.
         else:
             # If no Dask client is provided, process the audio files locally.
+
             dfs_audio = [
                 _split_audio_into_chunks(path_audio_file, chunk_duration=chunk_duration, sampling_rate=sampling_rate)
                 for path_audio_file in list_of_audio_files]
