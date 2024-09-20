@@ -10,7 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from components import navbar, footer
 from components.login import login_location
 from schema_model import User
-from src import login_manager, db, server
+from src import login_manager, sqlalchemy_db, server
 from utils.db_operations import update_db_methods
 from utils.settings import APP_HOST, APP_PORT, APP_DEBUG, DEV_TOOLS_PROPS_CHECK
 
@@ -34,7 +34,7 @@ def create_app(name='yapat', server=server, title='YAPAT | Yet Another PAM Annot
 @login_manager.user_loader
 def load_user(user_id):
     """Load the user by their ID."""
-    return db.session.execute(db.select(User).where(User.id == int(user_id))).scalar_one_or_none()
+    return sqlalchemy_db.session.execute(sqlalchemy_db.select(User).where(User.id == int(user_id))).scalar_one_or_none()
 
 
 def serve_layout():
@@ -98,8 +98,8 @@ def register_user(n_clicks, username, password):
 
         # Create a new user and add to the database
         new_user = User(username=username, password=hashed_password)
-        db.session.add(new_user)
-        db.session.commit()
+        sqlalchemy_db.session.add(new_user)
+        sqlalchemy_db.session.commit()
 
         return html.A("User registered successfully. Login here", href='/login')
     return ""
@@ -120,11 +120,11 @@ if __name__ == "__main__":
 
     # Any additional initialization (such as database operations) should be kept in the main block
     with server.app_context():
-        db.create_all(bind_key=['user_db', 'pipeline_db'])  # Create tables
+        sqlalchemy_db.create_all(bind_key=['user_db', 'pipeline_db'])  # Create tables
         try:
             add_methods = update_db_methods()
-            db.session.add_all(add_methods)
-            db.session.commit()
+            sqlalchemy_db.session.add_all(add_methods)
+            sqlalchemy_db.session.commit()
         except SQLAlchemyError as e:
-            db.session.rollback()
+            sqlalchemy_db.session.rollback()
             logger.exception(e)

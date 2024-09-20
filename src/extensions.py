@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 # Initialize the database extension (SQLAlchemy) without binding it to a Flask app yet.
 # This allows the database to be configured and attached later when the app is created.
-db = SQLAlchemy()
+sqlalchemy_db = SQLAlchemy()
 
 # Initialize the login manager extension (Flask-Login) without binding it to the app.
 # This will manage user session handling, such as login and logout.

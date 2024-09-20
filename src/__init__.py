@@ -3,7 +3,7 @@ import os
 
 from flask import Flask
 
-from extensions import db, login_manager
+from extensions import sqlalchemy_db, login_manager
 
 logger = logging.getLogger(__name__)
 
@@ -15,16 +15,16 @@ def create_server():
     # Configure Flask server
     server.config.update(
         SECRET_KEY=os.getenv('SECRET_KEY'),
-        SQLALCHEMY_DATABASE_URI='sqlite:///main.db',
+        SQLALCHEMY_DATABASE_URI='sqlite:///main.sqlalchemy_db',
         SQLALCHEMY_BINDS={
-            'user_db': 'sqlite:///user_management.db',
-            'pipeline_db': 'sqlite:///pipeline_data.db'
+            'user_db': 'sqlite:///user_management.sqlalchemy_db',
+            'pipeline_db': 'sqlite:///pipeline_data.sqlalchemy_db'
         },
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
     )
 
     # Initialize extensions with the app
-    db.init_app(server)
+    sqlalchemy_db.init_app(server)
     login_manager.init_app(server)
     login_manager.login_view = 'login'
 

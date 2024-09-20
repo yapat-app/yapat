@@ -4,11 +4,11 @@ from flask_login import UserMixin
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import relationship, backref
 
-from extensions import db
+from extensions import sqlalchemy_db
 
 
 # Define User model
-class User(db.Model, UserMixin):
+class User(sqlalchemy_db.Model, UserMixin):
     __tablename__ = 'users'
     __bind_key__ = 'user_db'
     id = Column(Integer, primary_key=True)
@@ -17,7 +17,7 @@ class User(db.Model, UserMixin):
 
 
 # 1. Datasets Table
-class Dataset(db.Model):
+class Dataset(sqlalchemy_db.Model):
     __tablename__ = 'datasets'
     __bind_key__ = "pipeline_db"
 
@@ -28,7 +28,7 @@ class Dataset(db.Model):
 
 
 # 2. Embedding Methods Table
-class EmbeddingMethod(db.Model):
+class EmbeddingMethod(sqlalchemy_db.Model):
     __tablename__ = 'embedding_methods'
     __bind_key__ = "pipeline_db"
 
@@ -38,7 +38,7 @@ class EmbeddingMethod(db.Model):
 
 
 # 3. Embeddings Results Table
-class EmbeddingResult(db.Model):
+class EmbeddingResult(sqlalchemy_db.Model):
     __tablename__ = 'embedding_results'
     __bind_key__ = "pipeline_db"
 
@@ -55,7 +55,7 @@ class EmbeddingResult(db.Model):
 
 
 # 4. Clustering Methods Table
-class ClusteringMethod(db.Model):
+class ClusteringMethod(sqlalchemy_db.Model):
     __tablename__ = 'clustering'
     __bind_key__ = "pipeline_db"
 
@@ -65,7 +65,7 @@ class ClusteringMethod(db.Model):
 
 
 # 5. Clustering Results Table
-class ClusteringResult(db.Model):
+class ClusteringResult(sqlalchemy_db.Model):
     __tablename__ = 'clustering_results'
     __bind_key__ = "pipeline_db"
 
@@ -85,7 +85,7 @@ class ClusteringResult(db.Model):
 
 
 # 6. Dimensionality Reduction Methods Table
-class DimReductionMethod(db.Model):
+class DimReductionMethod(sqlalchemy_db.Model):
     __tablename__ = 'dimensionality_reduction'
     __bind_key__ = "pipeline_db"
 
@@ -95,7 +95,7 @@ class DimReductionMethod(db.Model):
 
 
 # 7. Dimensionality Reduction Results Table
-class DimReductionResult(db.Model):
+class DimReductionResult(sqlalchemy_db.Model):
     __tablename__ = 'dim_reduction_results'
     __bind_key__ = "pipeline_db"
 

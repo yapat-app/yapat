@@ -10,9 +10,8 @@ import numpy as np
 import pandas as pd
 from sqlalchemy.exc import SQLAlchemyError
 
-from extensions import db
+from extensions import sqlalchemy_db
 from schema_model import Dataset, EmbeddingMethod
-# from src import server
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +19,10 @@ logger = logging.getLogger(__name__)
 def register_dataset(dataset_name, path_audio, flask_server):
     with flask_server.app_context():
         try:
-            db.session.add(Dataset(dataset_name=dataset_name, path_audio=path_audio))
-            db.session.commit()
+            sqlalchemy_db.session.add(Dataset(dataset_name=dataset_name, path_audio=path_audio))
+            sqlalchemy_db.session.commit()
         except SQLAlchemyError as e:
-            db.session.rollback()
+            sqlalchemy_db.session.rollback()
             logger.exception(e)
 
 
@@ -95,7 +94,8 @@ class BaseEmbedding:
             Returns a pandas DataFrame containing the audio file paths and other metadata.
         """
 
-    def __init__(self, dataset_name: str, dask_client: dask.distributed.client.Client or None = None, flask_server = None) -> None:
+    def __init__(self, dataset_name: str, dask_client: dask.distributed.client.Client or None = None,
+                 flask_server=None) -> None:
         """
         Initialize the BaseEmbedding class with the model path and an optional Dask client.
 
@@ -133,8 +133,8 @@ class BaseEmbedding:
                 """
         # Fetch the path to the dataset from the database using a Flask app context.
         with flask_server.app_context():
-            path_dataset = db.session.execute(
-                db.select(Dataset.path_audio).where(Dataset.dataset_name == dataset_name)).scalar_one_or_none()
+            path_dataset = sqlalchemy_db.session.execute(sqlalchemy_db.select(Dataset.path_audio).where(
+                Dataset.dataset_name == dataset_name)).scalar_one_or_none()
 
         # Recursively find all audio files in the dataset with the specified extension.
         list_of_audio_files = glob.glob(os.path.join(path_dataset, '**', '*.' + extension.lstrip('.')), recursive=True)

@@ -12,7 +12,7 @@ from dash import html, callback, Input, Output, State
 
 from embeddings import register_dataset
 from schema_model import Dataset
-from src import db, server
+from src import sqlalchemy_db, server
 # from pages import get_list_files, split_single_audio, load_audio_files_with_tf_dataset
 from utils.db_operations import list_existing_datasets
 
@@ -160,8 +160,8 @@ def update_project_summary(dataset_name):
     children = [html.H5('Dataset summary')]
     if dataset_name:
         with server.app_context():
-            path_dataset = db.session.execute(
-                db.select(Dataset.path_audio).where(Dataset.dataset_name == dataset_name)).scalar_one_or_none()
+            path_dataset = sqlalchemy_db.session.execute(
+                sqlalchemy_db.select(Dataset.path_audio).where(Dataset.dataset_name == dataset_name)).scalar_one_or_none()
         all_clips = glob.glob(os.path.join(path_dataset, '**', '*.wav'), recursive=True)
     #     annotations = pd.read_csv(os.path.join('projects', project_name, 'annotations.csv'))
     #     n_labeled = len(annotations['sound_clip_url'].unique())
