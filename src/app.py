@@ -11,7 +11,7 @@ from components import navbar, footer
 from components.login import login_location
 from schema_model import User
 from src import login_manager, sqlalchemy_db, server
-from utils.db_operations import update_db_methods
+from pages.explore.callbacks import update_db_methods
 from utils.settings import APP_HOST, APP_PORT, APP_DEBUG, DEV_TOOLS_PROPS_CHECK
 
 logger = logging.getLogger(__name__)
