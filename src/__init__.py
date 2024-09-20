@@ -15,10 +15,10 @@ def create_server():
     # Configure Flask server
     server.config.update(
         SECRET_KEY=os.getenv('SECRET_KEY'),
-        SQLALCHEMY_DATABASE_URI='sqlite:///main.sqlalchemy_db',
+        SQLALCHEMY_DATABASE_URI='sqlite:///main.db',
         SQLALCHEMY_BINDS={
-            'user_db': 'sqlite:///user_management.sqlalchemy_db',
-            'pipeline_db': 'sqlite:///pipeline_data.sqlalchemy_db'
+            'user_db': 'sqlite:///user_management.db',
+            'pipeline_db': 'sqlite:///pipeline_data.db'
         },
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
     )

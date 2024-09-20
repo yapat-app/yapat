@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from maad import features
-
+import maad
+from maad import sound, features
 from embeddings import BaseEmbedding
 
 
@@ -61,27 +61,31 @@ class AcousticIndices(BaseEmbedding):
         """
         pass  # No model loading required for this class.
 
-    def process(self, dataset_name: str, extension: str = '.wav', sampling_rate: int = 48000, **kwargs):
+    def process(self, dataset_name: str, sampling_rate: int = 48000, **kwargs):
         """
-        Processes the dataset by reading the audio files and computing the spectral features.
+        Processes the dataset by reading the audio files and computing the acoustic indices.
 
         :param dataset_name: Name of the dataset to process.
-        :param extension: File extension for audio files (default is '.wav').
+        :param extension: File extension for audio files.
         :param sampling_rate: Sampling rate for the audio files (default is 48,000).
         :param kwargs: Additional keyword arguments for feature computation (e.g., 'nperseg', 'roi', 'method').
         :return: A pandas DataFrame containing computed acoustic features for each audio file.
         """
         # Load the dataset of audio files into a DataFrame.
-        self.data = self.read_audio_dataset(dataset_name, extension, sampling_rate)
-
+        self.data = self.read_audio_dataset(dataset_name, sampling_rate, chunk_duration=3)
         # Initialize a list to store computed features for all audio files.
         all_features = []
+        for row in self.data.iterrows():
 
-        # Loop through each audio file in the dataset and compute spectral features.
-        for audio_file in self.data['sound_clip_url']:
-            features_df = compute_spectral_features(audio_file, sampling_rate, **kwargs)
-            all_features.append(features_df)
+            temporal_indices = maad.features.all_temporal_alpha_indices(s=row[1].audio_data, fs=48000)
+            Sxx_power, tn, fn, _ = maad.sound.spectrogram(x=row[1].audio_data, fs=48000)
+            spectral_indices, per_bin_indices = maad.features.all_spectral_alpha_indices(Sxx_power, tn, fn)
+            all_indices = temporal_indices.join(spectral_indices)
+            all_features.append(all_indices)
 
-        # Concatenate the features for all audio files into a single DataFrame.
-        self.embeddings = pd.concat(all_features, axis=0)
+        self.embeddings = pd.concat(all_features, axis=0).set_index(self.data.index)
         return self.embeddings
+
+
+acoustic_indices = AcousticIndices(dataset_name='anura_subset')
+result = acoustic_indices.process(dataset_name='anurasubset')
