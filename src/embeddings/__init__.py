@@ -121,11 +121,13 @@ class BaseEmbedding:
         """
         raise NotImplementedError("This method should be implemented by subclasses")
 
-    def read_audio_dataset(self, dataset_name: str, extension: str = '.wav',
-                           sampling_rate: int = 48000, flask_server = None) -> pd.DataFrame:
+    def read_audio_dataset(self, dataset_name: str, extension: str = '.wav', chunk_duration: float = 3,
+                           sampling_rate: int = 48000, flask_server=None) -> pd.DataFrame:
         """
                 Read the dataset of audio files, and optionally process it using Dask for parallelization.
 
+                :param flask_server:
+                :param chunk_duration:
                 :param dataset_name: Name of the dataset to load from the database.
                 :param extension: File extension for audio files to be included (default is '.wav').
                 :param sampling_rate: The sampling rate for the audio files (default is 48,000).
@@ -143,11 +145,13 @@ class BaseEmbedding:
         if self.dask_client is not None:
             # Use Dask to map audio files to chunking tasks and gather the results.
             dfs_audio = self.dask_client.map(_split_audio_into_chunks, list_of_audio_files,
-                                             itertools.repeat(sampling_rate))
+                                             itertools.repeat(chunk_duration), itertools.repeat(sampling_rate))
             df_audio = pd.concat(self.dask_client.gather(dfs_audio))  # Concatenate the results.
         else:
             # If no Dask client is provided, process the audio files locally.
-            dfs_audio = [_split_audio_into_chunks(df_single_file) for df_single_file in list_of_audio_files]
+            dfs_audio = [
+                _split_audio_into_chunks(path_audio_file, chunk_duration=chunk_duration, sampling_rate=sampling_rate)
+                for path_audio_file in list_of_audio_files]
             df_audio = pd.concat(dfs_audio)
 
         # Return the concatenated DataFrame of processed audio files.
@@ -156,14 +160,15 @@ class BaseEmbedding:
 
 def compute_embeddings(dataset_name: str, embedding_method: str, flask_server):
     with flask_server.app_context():
-        path_audio = db.session.execute(
-            db.select(Dataset.path_audio).filter_by(dataset_name=dataset_name)).scalar_one_or_none()
-        embedding = db.session.execute(db.select(EmbeddingMethod).filter_by(method_name=embedding_method))
+        path_audio = sqlalchemy_db.session.execute(
+            sqlalchemy_db.select(Dataset.path_audio).filter_by(dataset_name=dataset_name)).scalar_one_or_none()
+        embedding = sqlalchemy_db.session.execute(
+            sqlalchemy_db.select(EmbeddingMethod).filter_by(method_name=embedding_method))
     embedding = import_module(f"embeddings.{embedding}")
     return embedding.fit_transform(path_audio)
 
 
-def get_embedding_model(method_name : str, dask_client : dask.distributed.client.Client or None = None):
+def get_embedding_model(method_name: str, dask_client: dask.distributed.client.Client or None = None):
     if method_name == "birdnet":
         from embeddings.birdnet import BirdnetEmbedding
         return BirdnetEmbedding(method_name, dask_client)
