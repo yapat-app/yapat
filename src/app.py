@@ -110,14 +110,6 @@ if __name__ == "__main__":
     # Only initialize the Dash app if this script is the entry point
     app = create_app()
 
-    # Run the Dash app
-    app.run_server(
-        host=APP_HOST,
-        port=APP_PORT,
-        debug=APP_DEBUG,
-        dev_tools_props_check=DEV_TOOLS_PROPS_CHECK
-    )
-
     # Any additional initialization (such as database operations) should be kept in the main block
     with server.app_context():
         sqlalchemy_db.create_all(bind_key=['user_db', 'pipeline_db'])  # Create tables
@@ -128,3 +120,13 @@ if __name__ == "__main__":
         except SQLAlchemyError as e:
             sqlalchemy_db.session.rollback()
             logger.exception(e)
+
+    # Run the Dash app
+    app.run_server(
+        host=APP_HOST,
+        port=APP_PORT,
+        debug=APP_DEBUG,
+        dev_tools_props_check=DEV_TOOLS_PROPS_CHECK
+    )
+
+
