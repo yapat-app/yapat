@@ -14,7 +14,7 @@ from embeddings import register_dataset
 from schema_model import Dataset
 from src import sqlalchemy_db, server
 # from pages import get_list_files, split_single_audio, load_audio_files_with_tf_dataset
-from utils.db_operations import list_existing_datasets
+from pages.explore.callbacks import list_existing_datasets
 
 logger = logging.getLogger(__name__)
 
