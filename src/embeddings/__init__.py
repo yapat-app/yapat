@@ -50,7 +50,6 @@ def _split_audio_into_chunks(filename: str, chunk_duration: float, sampling_rate
 
     if abs(total_duration - chunk_duration) < 0.1:
         if re.match(pattern_with_seconds, filename):
-            print('yes')
             return pd.DataFrame({"filename": [filename], "audio_data":[audio]}).set_index("filename")
     else:
         chunk_size = sampling_rate * chunk_duration
