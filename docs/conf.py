@@ -18,6 +18,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
     'sphinx_copybutton',
+    'autoapi.extension'
 ]
 
 intersphinx_mapping = {
@@ -34,3 +35,6 @@ html_theme = 'sphinx_rtd_theme'
 
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
+
+# -- Options for AUTOAPI
+autoapi_dirs = ['../src']

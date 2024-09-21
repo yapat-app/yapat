@@ -34,7 +34,7 @@ The integrated visualization suite combines embedding, dimensionality reduction,
    :maxdepth: 2
    :caption: User Guide
 
-   projects
+   datasets
    visualization
    annotation
 

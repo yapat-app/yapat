@@ -1,17 +1,19 @@
-# from flask_login import LoginManager
 import os
 import random
+import logging
 
 import dash
 import dash_bootstrap_components as dbc
-from dash import html, dcc, callback, Output, Input, State
+from dash import html, dcc, callback, Output, Input, State, Dash
 from dash.exceptions import PreventUpdate
-from flask import Flask
-from flask_login import LoginManager, UserMixin, login_user
-from flask_sqlalchemy import SQLAlchemy
+from flask_login import login_user
+from sqlalchemy.exc import SQLAlchemyError
 
 from components import navbar, footer
-from components.login import login_location  # , User
+from components.login import login_location
+from schema_model import User
+from src import login_manager, sqlalchemy_db, server
+from pages.explore.callbacks import update_db_methods
 from utils.settings import APP_HOST, APP_PORT, APP_DEBUG, DEV_TOOLS_PROPS_CHECK
 
 server = Flask(__name__)
@@ -20,67 +22,44 @@ server.config.update(SQLALCHEMY_DATABASE_URI='sqlite:///users.db')
 server.config.update(SQLALCHEMY_TRACK_MODIFICATIONS=False)
 server.secret_key = str(random.randint(a=0, b=1000000))
 
-
-login_manager = LoginManager(server)
-login_manager.init_app(server)
-login_manager.login_view = 'login'
-
-db = SQLAlchemy(server)
+logger = logging.getLogger(__name__)
 
 
-# Define User model
-class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(150), nullable=False)
-
-
-with server.app_context():
-    db.create_all()
+def create_app(name='yapat', server=server, title='YAPAT | Yet Another PAM Annotation Tool'):
+    """Create the Dash app and link it to Flask."""
+    app = Dash(
+        name=name,
+        server=server,
+        use_pages=True,
+        external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
+        suppress_callback_exceptions=True,
+        title=title
+    )
+    app.layout = serve_layout
+    return app
 
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
-
-
-app = dash.Dash(
-    __name__,
-    server=server,
-    use_pages=True,  # turn on Dash pages
-    external_stylesheets=[
-        dbc.themes.BOOTSTRAP,
-        dbc.icons.FONT_AWESOME
-    ],
-    suppress_callback_exceptions=True,
-    title='YAPAT | yet another PAM annotation tool'
-)
+    """Load the user by their ID."""
+    return sqlalchemy_db.session.execute(sqlalchemy_db.select(User).where(User.id == int(user_id))).scalar_one_or_none()
 
 
 def serve_layout():
-    """Define the layout of the application"""
+    """Define the layout of the application."""
     return html.Div(
         [
             login_location,
             navbar.navbar,
             dcc.Store(
                 id='project-content',
-                data={
-                    'project_name': '',
-                    'current_sample': '',
-                },
+                data={'project_name': '', 'current_sample': ''},
                 storage_type='session'
             ),
-            dbc.Container(
-                dash.page_container,
-                class_name='my-2'
-            ),
-            footer.footer
+            dbc.Container(dash.page_container, class_name='my-2'),
+            footer.layout
         ]
     )
-
-
-app.layout = serve_layout
 
 
 @callback(
@@ -93,6 +72,7 @@ app.layout = serve_layout
     prevent_initial_call=True
 )
 def login_button_click(n_clicks, username, password, pathname):
+    """Handle login button click."""
     if n_clicks > 0:
         user = User.query.filter_by(username=username).first()
         from werkzeug.security import check_password_hash
@@ -103,13 +83,14 @@ def login_button_click(n_clicks, username, password, pathname):
     raise PreventUpdate
 
 
-@app.callback(
+@callback(
     Output('register-feedback', 'children'),
     Input('register-button', 'n_clicks'),
     State('register-username', 'value'),
     State('register-password', 'value')
 )
 def register_user(n_clicks, username, password):
+    """Handle user registration."""
     if n_clicks > 0:
         if not username or not password:
             return "Username and password cannot be empty."
@@ -125,16 +106,19 @@ def register_user(n_clicks, username, password):
 
         # Create a new user and add to the database
         new_user = User(username=username, password=hashed_password)
-        db.session.add(new_user)
-        db.session.commit()
+        sqlalchemy_db.session.add(new_user)
+        sqlalchemy_db.session.commit()
 
         return html.A("User registered successfully. Login here", href='/login')
-
     return ""
 
 
-def main():
-    """Entry point for the Dash app"""
+# Prevent app from running on Dask workers by using a main check
+if __name__ == "__main__":
+    # Only initialize the Dash app if this script is the entry point
+    app = create_app()
+
+    # Run the Dash app
     app.run_server(
         host=APP_HOST,
         port=APP_PORT,
@@ -142,6 +126,13 @@ def main():
         dev_tools_props_check=DEV_TOOLS_PROPS_CHECK
     )
 
-
-if __name__ == "__main__":
-    main()
+    # Any additional initialization (such as database operations) should be kept in the main block
+    with server.app_context():
+        sqlalchemy_db.create_all(bind_key=['user_db', 'pipeline_db'])  # Create tables
+        try:
+            add_methods = update_db_methods()
+            sqlalchemy_db.session.add_all(add_methods)
+            sqlalchemy_db.session.commit()
+        except SQLAlchemyError as e:
+            sqlalchemy_db.session.rollback()
+            logger.exception(e)

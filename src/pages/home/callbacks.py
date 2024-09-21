@@ -8,9 +8,13 @@ import dash
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from dash import html, callback, Input, Output, State, dcc
+from dash import html, callback, Input, Output, State
 
-from pages import get_list_files, split_single_audio, load_audio_files_with_tf_dataset
+from embeddings import register_dataset
+from schema_model import Dataset
+from src import sqlalchemy_db, server
+# from pages import get_list_files, split_single_audio, load_audio_files_with_tf_dataset
+from pages.explore.callbacks import list_existing_datasets
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +38,7 @@ def init_project(project_name, audio_path, clip_duration, embedding_model):
         gen_tables(project_name)
         gen_clips(project_name, audio_path, clip_duration)
         gen_queue(project_name, n=10)
-        gen_embeddings(project_name, embedding_model)
+        # gen_embeddings(project_name, embedding_model)
     except Exception as e:
         logger.error(f"Failed to initialize project '{project_name}': {str(e)}")
         raise
@@ -121,28 +125,27 @@ def gen_embeddings(project_name, embedding_model):
 
 # %%
 @callback(
-    Output('project-list', 'options'),
-    Output('project-list', 'value'),
+    Output('dataset-list', 'options'),
+    Output('dataset-list', 'value'),
     Output('project-content', 'data', allow_duplicate=True),
-    Input('project-list', 'value'),
+    Input('dataset-list', 'value'),
     Input('button-project-create', 'n_clicks'),
     State('navbar', 'brand'),
-    State('project-name', 'value'),
+    State('dataset-name', 'value'),
     State('audio-path', 'value'),
     State('embedding-model', 'value'),
     State('project-content', 'data'),
     prevent_initial_call=True
 )
-def update_options_project(project_value, project_create, brand, project_name, audio_path, embedding_model, data):
+def update_options_project(project_value, project_create, brand, project_name, path_audio, embedding_model, data):
     if dash.ctx.triggered_id == 'button-project-create':
-        clip_duration = 3 if embedding_model == 'birdnet' else None  # Clip duration in seconds
+        # dask_client.submit(register_dataset, dataset_name=project_name, path_audio=path_audio)
+        register_dataset(dataset_name=project_name, path_audio=path_audio, flask_server=server)
         project_value = project_name
-        init_project(project_name, audio_path, clip_duration, embedding_model)
-        # TODO Queue initialization tasks, inform when ready
     elif data.get('project_name') and not project_value:
         project_value = data['project_name']
 
-    options = scan_projects()
+    options = [{'label': x, 'value': x} for x in list_existing_datasets()]
     data['project_name'] = project_value
     data['current_sample'] = ''
 
@@ -150,25 +153,32 @@ def update_options_project(project_value, project_create, brand, project_name, a
 
 
 @callback(
-    Output('project-summary', 'children'),
-    Input('project-list', 'value')
+    Output('dataset-summary', 'children'),
+    Input('dataset-list', 'value')
 )
-def update_project_summary(project_name):
-    children = [html.H5('Project summary')]
-    if project_name:
-        all_clips = glob.glob(os.path.join('projects', project_name, 'clips', '*.wav'))
-        annotations = pd.read_csv(os.path.join('projects', project_name, 'annotations.csv'))
-        n_labeled = len(annotations['sound_clip_url'].unique())
-        n_classes = len(annotations.columns)
-        children.append(html.P(f'Found {len(all_clips)} clips, {n_labeled} of which are labelled for {n_classes} class categories'))
-        children.append(dcc.Link("Start annotating", href='/annotate'))
-        children.append(html.P('Export project data'))
+def update_project_summary(dataset_name):
+    children = [html.H5('Dataset summary')]
+    if dataset_name:
+        with server.app_context():
+            path_dataset = sqlalchemy_db.session.execute(
+                sqlalchemy_db.select(Dataset.path_audio).where(Dataset.dataset_name == dataset_name)).scalar_one_or_none()
+        all_clips = glob.glob(os.path.join(path_dataset, '**', '*.wav'), recursive=True)
+    #     annotations = pd.read_csv(os.path.join('projects', project_name, 'annotations.csv'))
+    #     n_labeled = len(annotations['sound_clip_url'].unique())
+    #     n_classes = len(annotations['label'].unique())
+        n_labeled = '[UNK]'
+        n_classes = '[UNK]'
+        msg = f'Found {len(all_clips)} audio files, {n_labeled} of which are labelled for {n_classes} class categories'
+        if n_classes == 1: msg = msg.replace('categories', 'category')
+        children.append(html.P(msg))
+    #     children.append(dcc.Link("Start annotating", href='/annotate'))
+    #     children.append(html.P('Export project data'))
     return children
 
 
 @callback(
     Output('button-project-create', 'disabled'),
-    Input('project-name', 'valid'),
+    Input('dataset-name', 'valid'),
     Input('audio-path', 'valid'),
     Input('embedding-model', 'valid'),
 )
@@ -177,10 +187,10 @@ def check_create(v1, v2, v3):
 
 
 @callback(
-    Output("collapse", "is_open"),
-    Input("collapse-button", "n_clicks"),
+    Output("collapse-new-dataset", "is_open"),
+    Input("btn-new-dataset", "n_clicks"),
     Input("button-project-cancel", "n_clicks"),
-    State("collapse", "is_open"),
+    State("collapse-new-dataset", "is_open"),
 )
 def toggle_collapse(n1, n2, is_open):
     if n1 or n2:
@@ -189,13 +199,13 @@ def toggle_collapse(n1, n2, is_open):
 
 
 @callback(
-    Output('project-name', 'valid'),
-    Output('project-name', 'invalid'),
-    Input('project-name', 'value')
+    Output('dataset-name', 'valid'),
+    Output('dataset-name', 'invalid'),
+    Input('dataset-name', 'value')
 )
 def check_project_name(value):
     if value:
-        is_valid = value not in os.listdir('projects')
+        is_valid = value not in list_existing_datasets()
         return is_valid, not is_valid
     return False, False
 
@@ -225,7 +235,7 @@ def check_embedding_model(value):
 # layout = html.Div([
 #     html.Label('Select project'),
 #     dcc.Dropdown(
-#         id='project-list-dropdown',
+#         id='dataset-list-dropdown',
 #         options=[{'label': 'True', 'value': 'True'}, {'label': 'False', 'value': 'False'}],
 #         # value=debug_mode
 #     ),

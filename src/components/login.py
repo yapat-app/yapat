@@ -44,7 +44,7 @@ def logged_in_info(username: str = ''):
     layout = html.Div(
         [
             dbc.Button(
-                html.I(className='fas fa-circle-user fa-xl'),
+                [html.I(className='fas fa-circle-user fa-xl'), ' ', username],
                 id='user-popover',
                 outline=True,
                 color='light',
