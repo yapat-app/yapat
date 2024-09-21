@@ -116,5 +116,3 @@ class DimReductionResult(sqlalchemy_db.Model):
                                      backref=backref('dim_reduction_results', lazy=True))
     method = relationship('DimReductionMethod',
                           backref=backref('dim_reduction_results', lazy=True))
-
-# TODO Add "task_state" field to all results tables
