@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import maad
 from maad import sound, features
+import dask
 from embeddings import BaseEmbedding
 
 
@@ -54,6 +55,9 @@ class AcousticIndices(BaseEmbedding):
     compute_spectral_features(audio_file: str, sampling_rate: int = 48000, **kwargs) -> pd.DataFrame:
         Computes all spectral features for a single audio file using the `maad.features.all_spectral_features` method.
     """
+    def __init__(self, model_path=None,
+                 dask_client: dask.distributed.client.Client or None = None):
+        super().__init__(model_path, dask_client)
 
     def load_model(self):
         """
@@ -66,14 +70,11 @@ class AcousticIndices(BaseEmbedding):
         Processes the dataset by reading the audio files and computing the acoustic indices.
 
         :param dataset_name: Name of the dataset to process.
-        :param extension: File extension for audio files.
         :param sampling_rate: Sampling rate for the audio files (default is 48,000).
         :param kwargs: Additional keyword arguments for feature computation (e.g., 'nperseg', 'roi', 'method').
         :return: A pandas DataFrame containing computed acoustic features for each audio file.
         """
-        # Load the dataset of audio files into a DataFrame.
         self.data = self.read_audio_dataset(dataset_name, sampling_rate, chunk_duration=3)
-        # Initialize a list to store computed features for all audio files.
         all_features = []
         for row in self.data.iterrows():
 
@@ -85,3 +86,7 @@ class AcousticIndices(BaseEmbedding):
 
         self.embeddings = pd.concat(all_features, axis=0).set_index(self.data.index)
         return self.embeddings
+
+acoustic =AcousticIndices()
+results = acoustic.process('anura_subset')
+print(results)
