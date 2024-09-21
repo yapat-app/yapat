@@ -45,8 +45,9 @@ class EmbeddingResult(sqlalchemy_db.Model):
     id = Column(Integer, primary_key=True)
     dataset_id = Column(Integer, ForeignKey('datasets.id'), nullable=False)
     embedding_id = Column(Integer, ForeignKey('embedding_methods.id'), nullable=False)
-    file_path = Column(String(255), nullable=False)  # Store path to the embedding file
+    file_path = Column(String(255), unique=True)  # Store path to the embedding file
     hyperparameters = Column(JSON, nullable=True)  # Hyperparameters stored as JSON
+    task_state = Column(String(64), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
