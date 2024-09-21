@@ -5,8 +5,10 @@ import librosa
 from tensorflow.keras import layers, Model
 from tensorflow.keras.optimizers import Adam
 from scipy.io import wavfile
+import dask
 
 from embeddings import BaseEmbedding
+from models.vae.autoencoder import VAE
 
 
 class VAEEmbedding(BaseEmbedding):
@@ -35,138 +37,63 @@ class VAEEmbedding(BaseEmbedding):
     process(dataset_name: str, extension: str = '.wav', sampling_rate: int = 48000, **kwargs):
         Processes the audio dataset by computing spectrograms and fitting a VAE.
 
-    compute_spectrogram(audio_file: str, sampling_rate: int = 48000, n_fft: int = 2048, hop_length: int = 512) -> np.ndarray:
-        Computes a spectrogram from an audio file using the specified parameters.
-
-    build_vae(input_shape: tuple, latent_dim: int = 64) -> tensorflow.keras.Model:
-        Builds a VAE model using TensorFlow/Keras.
     """
 
+    def __init__(self, model_path='../assets/models/vae/autoencoder.py',
+                 dask_client: dask.distributed.client.Client or None = None,
+                 learning_rate = 0.05, batch_size=16, epochs=1, latent_dim = 60):
+        super().__init__(model_path, dask_client)
+        self.learning_rate = learning_rate
+        self.epochs = epochs
+        self.batch_size = batch_size
+        self.latent_dim = latent_dim
+
+    def _preprocess(self, signal, sample_rate, duration, frame_size, hop_length, min_val, max_val):
+
+        num_expected_samples = int(sample_rate * duration)
+        # Pad the signal if necessary
+        if len(signal) < num_expected_samples:
+            num_missing_samples = num_expected_samples - len(signal)
+            signal = np.pad(signal, (0, num_missing_samples), mode='constant')
+        stft = librosa.stft(signal, n_fft=frame_size, hop_length=hop_length)[:-1]
+        spectrogram = np.abs(stft)
+        log_spectrogram = librosa.amplitude_to_db(spectrogram)
+        min_val = log_spectrogram.min()
+        max_val = log_spectrogram.max()
+        norm_log_spectrogram = (log_spectrogram - min_val) / (max_val - min_val)
+        norm_log_spectrogram = norm_log_spectrogram * (max_val - min_val) + min_val
+        return norm_log_spectrogram, min_val, max_val
+
     def load_model(self):
-        """
-        Loads a pre-trained VAE model from the model path if it exists.
-        """
-        try:
-            self.vae = tf.keras.models.load_model(self.model_path)
-            print(f"Loaded VAE model from {self.model_path}")
-        except Exception as e:
-            print(f"No pre-trained model found at {self.model_path}. Will build a new one.")
-            self.vae = None
+        # Structure for 3 seconds audio files
+        autoencoder = VAE(
+            input_shape=(256, 282, 1),
+            conv_filters=(512, 256, 128, 64, 32),
+            conv_kernels=(3, 3, 3, 3, 3),
+            conv_strides=(1, 2, 2, 2, 1),
+            latent_space_dim=60
+        )
+        autoencoder.summary()
+        autoencoder.compile(self.learning_rate)
+        return autoencoder
 
-    def process(self, dataset_name: str, extension: str = '.wav', sampling_rate: int = 48000, **kwargs):
-        """
-        Processes the dataset by reading audio files, computing their spectrograms,
-        and fitting a VAE to the spectrograms.
 
-        :param dataset_name: Name of the dataset to process.
-        :param extension: File extension for audio files (default is '.wav').
-        :param sampling_rate: Sampling rate for the audio files (default is 48,000).
-        :param kwargs: Additional keyword arguments for VAE training (e.g., 'epochs', 'batch_size').
-        :return: None
-        """
-        # Load the dataset of audio files into a DataFrame
-        self.data = self.read_audio_dataset(dataset_name, extension, sampling_rate)
+    def process(self, dataset_name: str, sampling_rate: int = 48000):
 
-        # Initialize a list to store computed spectrograms
-        spectrograms = []
+        self.data = self.read_audio_dataset(dataset_name, sampling_rate, chunk_duration=3)
+        x_train = []
+        for row in self.data.iterrows():
+            norm_log_spectrogram, min_val, max_val = self._preprocess(row[1].audio_data, sample_rate=sampling_rate, duration=3,
+                                                                      frame_size=512,
+                                                                      hop_length=512, min_val=0, max_val=1)
+            norm_log_spectrogram = norm_log_spectrogram[..., np.newaxis]
+            x_train.append(norm_log_spectrogram)
 
-        # Compute spectrogram for each audio file
-        for audio_file in self.data['sound_clip_url']:
-            spec = self.compute_spectrogram(audio_file, sampling_rate)
-            spectrograms.append(spec)
+        autoencoder = self.load_model()
+        x_train = np.array(x_train)
+        autoencoder.train(x_train, self.batch_size, self.epochs)
+        autoencoder.save("vae_model")
+        encodings, _, _ = autoencoder.encoder.predict(x_train)
+        self.embeddings = pd.DataFrame(encodings, index=self.data.index, columns=[f'embedding_{i}' for i in range(self.latent_dim)])
+        return self.embeddings
 
-        # Stack all spectrograms into a single numpy array
-        spectrograms = np.stack(spectrograms, axis=0)
-
-        # Build or load the VAE model
-        input_shape = spectrograms.shape[1:]  # Shape of individual spectrograms
-        if self.vae is None:
-            self.vae = self.build_vae(input_shape)
-
-        # Train the VAE on the spectrograms
-        self.vae.compile(optimizer=Adam(learning_rate=0.001), loss=self.vae_loss)
-        self.vae.fit(spectrograms, spectrograms, epochs=kwargs.get('epochs', 50),
-                     batch_size=kwargs.get('batch_size', 32))
-
-        # Save the trained VAE model
-        self.vae.save(self.model_path)
-
-    def compute_spectrogram(self, audio_file: str, sampling_rate: int = 48000, n_fft: int = 2048,
-                            hop_length: int = 512) -> np.ndarray:
-        """
-        Compute the spectrogram for a single audio file.
-
-        :param audio_file: Path to the audio file.
-        :param sampling_rate: Sampling rate for the audio file (default is 48,000 Hz).
-        :param n_fft: Number of FFT components (default is 2048).
-        :param hop_length: Number of samples between successive frames (default is 512).
-        :return: A 2D numpy array representing the computed spectrogram.
-        """
-        # Load the audio file
-        s, fs = librosa.load(audio_file, sr=sampling_rate)
-
-        # Compute the Short-Time Fourier Transform (STFT) spectrogram
-        S = librosa.stft(s, n_fft=n_fft, hop_length=hop_length)
-
-        # Convert the complex-valued spectrogram to magnitude
-        S_magnitude = np.abs(S)
-
-        # Convert to decibels (logarithmic scale)
-        S_db = librosa.amplitude_to_db(S_magnitude, ref=np.max)
-
-        return S_db
-
-    def build_vae(self, input_shape: tuple, latent_dim: int = 64) -> Model:
-        """
-        Build a Variational Autoencoder (VAE) using TensorFlow/Keras.
-
-        :param input_shape: Shape of the input spectrograms.
-        :param latent_dim: Dimensionality of the latent space (default is 64).
-        :return: A Keras VAE model.
-        """
-        # Encoder
-        inputs = layers.Input(shape=input_shape)
-        x = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(inputs)
-        x = layers.MaxPooling2D((2, 2), padding='same')(x)
-        x = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(x)
-        x = layers.MaxPooling2D((2, 2), padding='same')(x)
-        x = layers.Flatten()(x)
-        x = layers.Dense(128, activation='relu')(x)
-
-        # Latent space
-        z_mean = layers.Dense(latent_dim)(x)
-        z_log_var = layers.Dense(latent_dim)(x)
-
-        def sampling(args):
-            z_mean, z_log_var = args
-            epsilon = tf.keras.backend.random_normal(shape=(tf.keras.backend.shape(z_mean)[0], latent_dim))
-            return z_mean + tf.keras.backend.exp(0.5 * z_log_var) * epsilon
-
-        z = layers.Lambda(sampling)([z_mean, z_log_var])
-
-        # Decoder
-        decoder_input = layers.Input(shape=(latent_dim,))
-        x = layers.Dense(np.prod(input_shape), activation='relu')(decoder_input)
-        x = layers.Reshape(input_shape)(x)
-        x = layers.Conv2DTranspose(64, (3, 3), activation='relu', padding='same')(x)
-        x = layers.UpSampling2D((2, 2))(x)
-        x = layers.Conv2DTranspose(32, (3, 3), activation='relu', padding='same')(x)
-        x = layers.UpSampling2D((2, 2))(x)
-        outputs = layers.Conv2DTranspose(1, (3, 3), activation='sigmoid', padding='same')(x)
-
-        # Full VAE model
-        encoder = Model(inputs, z)
-        decoder = Model(decoder_input, outputs)
-        vae_outputs = decoder(encoder(inputs))
-        vae = Model(inputs, vae_outputs)
-
-        return vae
-
-    def vae_loss(self, inputs, outputs):
-        """
-        VAE loss function, combining reconstruction loss and KL divergence.
-        """
-        reconstruction_loss = tf.keras.backend.mean(tf.keras.backend.square(inputs - outputs))
-        kl_loss = -0.5 * tf.keras.backend.sum(
-            1 + z_log_var - tf.keras.backend.square(z_mean) - tf.keras.backend.exp(z_log_var), axis=-1)
-        return reconstruction_loss + kl_loss
