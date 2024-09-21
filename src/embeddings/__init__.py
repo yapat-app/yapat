@@ -50,17 +50,17 @@ def _split_audio_into_chunks(filename: str, chunk_duration: float, sampling_rate
 
     if abs(total_duration - chunk_duration) < 0.1:
         if re.match(pattern_with_seconds, filename):
+            a = 'not identified'
             return pd.DataFrame({"filename": [filename], "audio_data":[audio]}).set_index("filename")
     else:
         chunk_size = sampling_rate * chunk_duration
-        audio = audio[:len(audio) // chunk_size * chunk_size]
-        # Split the audio into non-overlapping chunks
+        remainder = len(audio) % chunk_size
+        if remainder != 0:
+            audio = audio[:-remainder]
         chunked_audio = np.split(audio, len(audio) // chunk_size)
-        # Generate filenames for each chunk
         prefix, suffix = filename.rsplit('.', 1)
         indices = [f"{prefix}_{i * chunk_duration}_{(i + 1) * chunk_duration:.0f}.{suffix}" for i in
                    range(len(chunked_audio))]
-        # Create a DataFrame with chunked filenames and corresponding audio data
         df = pd.DataFrame({"filename": indices, "audio_data": chunked_audio})
         df.set_index("filename", inplace=True)
         return df
