@@ -86,7 +86,3 @@ class AcousticIndices(BaseEmbedding):
 
         self.embeddings = pd.concat(all_features, axis=0).set_index(self.data.index)
         return self.embeddings
-
-acoustic =AcousticIndices()
-results = acoustic.process('anura_subset')
-print(results)
