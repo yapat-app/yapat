@@ -10,14 +10,15 @@ import numpy as np
 import pandas as pd
 from sqlalchemy.exc import SQLAlchemyError
 
+from src import server
 from extensions import sqlalchemy_db
 from schema_model import Dataset, EmbeddingMethod
 
 logger = logging.getLogger(__name__)
 
 
-def register_dataset(dataset_name, path_audio, flask_server):
-    with flask_server.app_context():
+def register_dataset(dataset_name, path_audio):
+    with server.app_context():
         try:
             sqlalchemy_db.session.add(Dataset(dataset_name=dataset_name, path_audio=path_audio))
             sqlalchemy_db.session.commit()
@@ -94,8 +95,7 @@ class BaseEmbedding:
             Returns a pandas DataFrame containing the audio file paths and other metadata.
         """
 
-    def __init__(self, dataset_name: str, dask_client: dask.distributed.client.Client or None = None,
-                 flask_server=None) -> None:
+    def __init__(self, dataset_name: str, dask_client: dask.distributed.client.Client or None = None) -> None:
         """
         Initialize the BaseEmbedding class with the model path and an optional Dask client.
 
@@ -122,11 +122,10 @@ class BaseEmbedding:
         raise NotImplementedError("This method should be implemented by subclasses")
 
     def read_audio_dataset(self, dataset_name: str, extension: str = '.wav', chunk_duration: float = 3,
-                           sampling_rate: int = 48000, flask_server=None) -> pd.DataFrame:
+                           sampling_rate: int = 48000) -> pd.DataFrame:
         """
                 Read the dataset of audio files, and optionally process it using Dask for parallelization.
 
-                :param flask_server:
                 :param chunk_duration:
                 :param dataset_name: Name of the dataset to load from the database.
                 :param extension: File extension for audio files to be included (default is '.wav').
@@ -134,7 +133,7 @@ class BaseEmbedding:
                 :return: A pandas DataFrame containing audio file paths and any other relevant metadata.
                 """
         # Fetch the path to the dataset from the database using a Flask app context.
-        with flask_server.app_context():
+        with server.app_context():
             path_dataset = sqlalchemy_db.session.execute(sqlalchemy_db.select(Dataset.path_audio).where(
                 Dataset.dataset_name == dataset_name)).scalar_one_or_none()
 
@@ -158,8 +157,8 @@ class BaseEmbedding:
         return df_audio
 
 
-def compute_embeddings(dataset_name: str, embedding_method: str, flask_server):
-    with flask_server.app_context():
+def compute_embeddings(dataset_name: str, embedding_method: str):
+    with server.app_context():
         path_audio = sqlalchemy_db.session.execute(
             sqlalchemy_db.select(Dataset.path_audio).filter_by(dataset_name=dataset_name)).scalar_one_or_none()
         embedding = sqlalchemy_db.session.execute(
@@ -168,7 +167,7 @@ def compute_embeddings(dataset_name: str, embedding_method: str, flask_server):
     return embedding.fit_transform(path_audio)
 
 
-def get_embedding_model(method_name: str, dask_client: dask.distributed.client.Client or None = None):
+def get_embedding_model(method_name: str, dask_client: None or dask.distributed.client.Client = None):
     if method_name == "birdnet":
         from embeddings.birdnet import BirdnetEmbedding
         return BirdnetEmbedding(method_name, dask_client)
