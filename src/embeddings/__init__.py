@@ -100,7 +100,7 @@ class BaseEmbedding:
             Returns a pandas DataFrame containing the audio file paths and other metadata.
         """
 
-    def __init__(self, dataset_name: str, dask_client: dask.distributed.client.Client or None = None,
+    def __init__(self, model_path: str, dataset_name: str, dask_client: dask.distributed.client.Client or None = None,
                  flask_server=None) -> None:
         """
         Initialize the BaseEmbedding class with the model path and an optional Dask client.
@@ -114,12 +114,17 @@ class BaseEmbedding:
         self.dask_client = dask_client  # Dask client is used for distributed processing of tasks.
         self.data = None
         self.embeddings = None
+        self.model_path = model_path
 
     def load_model(self):
         """
         Placeholder method for loading the model. This should be implemented by subclasses.
         """
-        raise NotImplementedError("This method should be implemented by subclasses")
+        if self.model_path:
+            raise NotImplementedError("Subclasses should implement this method if a model path is provided.")
+        else:
+            pass
+        #raise NotImplementedError("This method should be implemented by subclasses")
 
     def process(self, audio_files):
         """
