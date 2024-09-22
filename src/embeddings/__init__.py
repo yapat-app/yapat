@@ -2,10 +2,11 @@ import glob
 import itertools
 import logging
 import os
+import pathlib
 from importlib import import_module
 from multiprocessing import Pool
 
-import dask
+import dask.distributed
 import librosa
 import numpy as np
 import pandas as pd
@@ -91,13 +92,18 @@ class BaseEmbedding:
         --------
         load_model():
             Abstract method for loading the model. Must be implemented by subclasses.
+            :raises NotImplementedError: This method must be implemented by subclasses for model loading.
+
 
         process(audio_files):
             Abstract method for processing audio files to generate embeddings. Must be implemented by subclasses.
+            :raises NotImplementedError: This method must be implemented by subclasses for model loading.
 
-        read_audio_dataset(dataset_name: str, extension: str = '.wav', sampling_rate: int = 48000) -> pd.DataFrame:
+
+        read_audio_dataset() -> pd.DataFrame:
             Reads and processes an audio dataset, optionally using Dask for parallel processing.
             Returns a pandas DataFrame containing the audio file paths and other metadata.
+            :return: A pandas DataFrame indexed by 'filename' and a data column 'audio_data' containing processed audio chunks.
         """
 
     def __init__(self, model_path: str, dataset_name: str, dask_client: dask.distributed.client.Client or None = None,
@@ -106,9 +112,10 @@ class BaseEmbedding:
         Initialize the BaseEmbedding class with the model path and an optional Dask client.
 
         :param dataset_name: Name of dataset as stored in Dataset.dataset_name from the database.
+        :param clip_duration: Audio files are chunked in clips of duration specified in seconds.
+        :param model_path: Path of pre-saved model (if any)
+        :param sampling_rate: Sample rate used by `librosa.load`. If None, native sampling rate will be used.
         :param dask_client: Optional Dask client for handling distributed task execution.
-        :param data: Initialized to None, will hold the processed audio data once read.
-        :param embeddings: Initialized to None, will store the generated embeddings.
         """
         self.dataset_name = dataset_name
         self.dask_client = dask_client  # Dask client is used for distributed processing of tasks.
@@ -118,7 +125,7 @@ class BaseEmbedding:
 
     def load_model(self):
         """
-        Placeholder method for loading the model. This should be implemented by subclasses.
+        Placeholder method for loading the model. This should be implemented by subclasses if needed.
         """
         if self.model_path:
             raise NotImplementedError("Subclasses should implement this method if a model path is provided.")
