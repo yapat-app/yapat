@@ -145,7 +145,7 @@ class BaseEmbedding:
         """
         raise NotImplementedError("This method should be implemented by subclasses")
 
-    def get_path_dataset(self, url_db : pathlib.Path or None = None):
+    def get_path_dataset(self, url_db: str or None = None):
 
         # Create a new DB session for the task
         url_db = url_db or 'sqlite:///src/instance/pipeline_data.db'

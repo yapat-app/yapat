@@ -1,7 +1,7 @@
 import dask
+import numpy as np
 import pandas as pd
 import tensorflow as tf
-import numpy as np
 
 from embeddings import BaseEmbedding
 
@@ -38,17 +38,17 @@ class BirdnetEmbedding(BaseEmbedding):
     def __init__(self, model_path='../assets/models/birdnet/V2.4/BirdNET_GLOBAL_6K_V2.4_Model',
                  dask_client: dask.distributed.client.Client or None = None):
         super().__init__(model_path, dask_client)
+        self.model = None
 
     def load_model(self):
         """
         Load the BirdNet-specific model, using a TensorFlow SMLayer for generating embeddings.
         """
 
-        input_data = tf.keras.layers.Input(shape=(144000,), dtype='float32',
-                                           name='input_layer')
-        tfsm_layer = tf.keras.layers.TFSMLayer(self.model_path, call_endpoint='embeddings')(input_data)
-        self.model = tf.keras.Model(inputs=input_data, outputs=tfsm_layer)
-
+        input_layer = tf.keras.layers.Input(shape=(144000,), dtype='float32',
+                                            name='input_layer')
+        tfsm_layer = tf.keras.layers.TFSMLayer(self.model_path, call_endpoint='embeddings')(input_layer)
+        self.model = tf.keras.Model(inputs=input_layer, outputs=tfsm_layer)
 
     def process(self, dataset_name: str, sampling_rate: int = 48000):
         """
@@ -69,4 +69,3 @@ class BirdnetEmbedding(BaseEmbedding):
 
         self.embeddings = pd.DataFrame(results, index=self.data.index, columns=[f'embedding_{i}' for i in range(1024)])
         return self.embeddings
-
