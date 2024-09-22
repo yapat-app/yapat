@@ -1,8 +1,14 @@
 import pandas as pd
-from abc import ABC, abstractmethod
 
+import dask
+from sklearn.preprocessing import StandardScaler
 
-class BaseClustering(ABC):
+from sqlalchemy.exc import SQLAlchemyError
+
+from extensions import sqlalchemy_db
+from schema_model import Dataset, EmbeddingResult
+
+class BaseClustering:
     """
     Base class for clustering models used to group data based on embeddings or other features.
 
@@ -25,11 +31,6 @@ class BaseClustering(ABC):
     save_labels(file_path: str):
         Saves the cluster labels to a CSV or pickle file.
 
-    fit(data: pd.DataFrame):
-        Abstract method for fitting the clustering algorithm. Must be implemented by subclasses.
-
-    predict(data: pd.DataFrame) -> pd.Series:
-        Abstract method for predicting cluster labels. Must be implemented by subclasses.
     """
 
     def __init__(self) -> None:
@@ -39,21 +40,32 @@ class BaseClustering(ABC):
         self.data = None  # Will hold the data to be clustered.
         self.labels = None  # Will store the cluster labels after fitting the model.
 
-    def load_data(self, file_path: str) -> pd.DataFrame:
+    def load_data(self, dataset_id: int, embedding_id: int) -> pd.DataFrame:
         """
         Load the data to be clustered from a CSV or pickle file.
 
         :param file_path: Path to the data file (CSV or pickle format).
         :return: DataFrame containing the loaded data.
         """
+        embedding_result = sqlalchemy_db.session.query(EmbeddingResult).filter_by(
+            dataset_id=dataset_id,
+            embedding_id=embedding_id
+        ).one_or_none()
+        file_path =  embedding_result.file_path
+
+
         if file_path.endswith('.csv'):
-            self.data = pd.read_csv(file_path)
+            self.data = pd.read_csv(file_path, index_col=0)
         elif file_path.endswith('.pkl'):
             self.data = pd.read_pickle(file_path)
         else:
             raise ValueError(f"Unsupported file type: {file_path}. Please use CSV or pickle.")
         return self.data
 
+    def scale_data(self, data):
+        scaler = StandardScaler()
+        scaled_data = scaler.fit_transform(data.values)
+        return scaled_data
     def save_labels(self, file_path: str):
         """
         Save the cluster labels to a CSV or pickle file.
@@ -71,18 +83,26 @@ class BaseClustering(ABC):
         else:
             raise ValueError(f"Unsupported file type: {file_path}. Please use CSV or pickle.")
 
-    @abstractmethod
-    def fit(self, data: pd.DataFrame):
-        """
-        Abstract method for fitting the clustering algorithm on the data.
-        This method must be implemented by subclasses.
-        """
-        pass
+        # SQL Query for saving clustering results
 
-    @abstractmethod
-    def predict(self, data: pd.DataFrame) -> pd.Series:
-        """
-        Abstract method for predicting cluster labels for the data.
-        This method must be implemented by subclasses.
-        """
-        pass
+
+
+
+def get_clustering_model(method_name: str, dask_client: dask.distributed.client.Client or None = None):
+    if method_name == "hdbscan":
+        from clustering.hdbscan import HDBSCANClustering
+        return HDBSCANClustering()
+    elif method_name == "dbscan":
+        from clustering.dbscan import DBSCANClustering
+        return DBSCANClustering()
+    elif method_name == "affinity":
+        from clustering.affinity import Affinity
+        return Affinity()
+    elif method_name == "kmeans":
+        from clustering.kmeans import KMeansClustering
+        return KMeansClustering()
+    else:
+        raise ValueError(f"Unknown embedding method: {method_name}")
+
+
+
