@@ -1,5 +1,4 @@
 import glob
-import itertools
 import logging
 import os
 import pathlib
@@ -172,9 +171,13 @@ class BaseEmbedding:
         # If a Dask client is provided, parallelize the audio chunking process using Dask.
         if self.dask_client is not None:
             # Use Dask to map audio files to chunking tasks and gather the results.
-            dfs_audio = self.dask_client.map(_split_audio_into_chunks, list_of_audio_files,
-                                             itertools.repeat(chunk_duration), itertools.repeat(sampling_rate))
-            df_audio = pd.concat(self.dask_client.gather(dfs_audio))  # Concatenate the results.
+            dfs_audio = self.dask_client.map(
+                _split_audio_into_chunks,
+                self.list_of_audio_files,
+                [self.clip_duration] * len(self.list_of_audio_files),  # Repeat clip_duration for each file
+                [self.sampling_rate] * len(self.list_of_audio_files)  # Repeat sampling_rate for each file
+            )
+            self.data = pd.concat(self.dask_client.gather(dfs_audio))  # Concatenate the results.
         else:
             # If no Dask client is provided, process the audio files locally.
             with Pool() as pool:
