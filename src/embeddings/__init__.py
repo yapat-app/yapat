@@ -10,23 +10,12 @@ import librosa
 import numpy as np
 import pandas as pd
 from sqlalchemy import create_engine, select
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
 from extensions import sqlalchemy_db
 from schema_model import Dataset, EmbeddingMethod
 
 logger = logging.getLogger(__name__)
-
-
-def register_dataset(dataset_name, path_audio, flask_server):
-    with flask_server.app_context():
-        try:
-            sqlalchemy_db.session.add(Dataset(dataset_name=dataset_name, path_audio=path_audio))
-            sqlalchemy_db.session.commit()
-        except SQLAlchemyError as e:
-            sqlalchemy_db.session.rollback()
-            logger.exception(e)
 
 
 def _split_audio_into_chunks(filename: str, chunk_duration: float, sampling_rate: int or None = None) -> pd.DataFrame:
