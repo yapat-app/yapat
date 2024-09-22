@@ -34,8 +34,6 @@ class Affinity(BaseClustering):
         #self.save_labels()
         return self.labels
 
-clustering = Affinity()
-clustering.fit(1, 2)
 
 
 
