@@ -3,7 +3,7 @@ import itertools
 import logging
 import os
 from importlib import import_module
-import re
+from multiprocessing import Pool
 
 import dask
 import librosa
@@ -170,11 +170,12 @@ class BaseEmbedding:
             df_audio = pd.concat(self.dask_client.gather(dfs_audio))  # Concatenate the results.
         else:
             # If no Dask client is provided, process the audio files locally.
-
-            dfs_audio = [
-                _split_audio_into_chunks(path_audio_file, chunk_duration=chunk_duration, sampling_rate=sampling_rate)
-                for path_audio_file in list_of_audio_files]
-            df_audio = pd.concat(dfs_audio)
+            with Pool() as pool:
+                # Use multiprocessing to process audio files in parallel
+                dfs_audio = pool.starmap(_split_audio_into_chunks,
+                                         [(path_audio_file, self.clip_duration, self.sampling_rate)
+                                          for path_audio_file in self.list_of_audio_files])
+            self.data = pd.concat(dfs_audio)
 
         # Return the concatenated DataFrame of processed audio files.
         return df_audio
