@@ -9,7 +9,9 @@ import dask.distributed
 import librosa
 import numpy as np
 import pandas as pd
+from sqlalchemy import create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import sessionmaker
 
 from extensions import sqlalchemy_db
 from schema_model import Dataset, EmbeddingMethod
@@ -147,7 +149,6 @@ class BaseEmbedding:
             raise NotImplementedError("Subclasses should implement this method if a model path is provided.")
         else:
             pass
-        #raise NotImplementedError("This method should be implemented by subclasses")
 
     def process(self, audio_files):
         """
@@ -155,8 +156,25 @@ class BaseEmbedding:
         """
         raise NotImplementedError("This method should be implemented by subclasses")
 
-    def read_audio_dataset(self, dataset_name: str,
-                           sampling_rate: int = 48000, chunk_duration : float=3, flask_server=None) -> pd.DataFrame:
+    def get_path_dataset(self, url_db : pathlib.Path or None = None):
+
+        # Create a new DB session for the task
+        url_db = url_db or 'sqlite:///src/instance/pipeline_data.db'
+        engine = create_engine(url_db)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+        # Fetch the path to the dataset from the database within this session
+        path_dataset = session.execute(
+            select(Dataset.path_audio).where(Dataset.dataset_name == self.dataset_name)
+        ).scalar_one()
+
+        # Close the session after the task is done
+        session.close()
+
+        return path_dataset
+
+    def read_audio_dataset(self) -> pd.DataFrame:
         """
                 Read the dataset of audio files, and optionally process it using Dask for parallelization.
 
