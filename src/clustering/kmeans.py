@@ -1,40 +1,40 @@
-import pandas as pd
 from sklearn.cluster import KMeans
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
 from clustering import BaseClustering
 
 class KMeansClustering(BaseClustering):
     """
-    K-Means clustering algorithm implementation that inherits from BaseClustering.
+
+    Methods:
+    --------
+    fit(data: pd.DataFrame):
+        Fit the KMeans clustering algorithm to the data.
+
     """
 
-    def __init__(self, n_clusters=8):
+    def __init__(self):
         """
-        Initialize the KMeansClustering class with the specified number of clusters.
-        :param n_clusters: The number of clusters to find.
+        Initialize the HDBSCANClustering class with the minimum cluster size.
+
+        :param min_cluster_size: The minimum size of clusters. Clusters smaller than this size will be treated as noise.
         """
         super().__init__()
-        self.n_clusters = n_clusters
-        self.kmeans = None  # Placeholder for the KMeans model.
+        self.clusterer = KMeans(random_state=42)
 
-    def fit(self, data: pd.DataFrame):
+    def fit(self, dataset_id: int, embedding_id: int):
         """
-        Fit the K-Means clustering algorithm on the data.
-        :param data: DataFrame containing the data to cluster.
+        :param data: DataFrame containing the data to be clustered.
+        :return: DataFrame containing the cluster labels assigned to the data.
         """
-        self.kmeans = KMeans(n_clusters=self.n_clusters)
-        self.kmeans.fit(data)
-        self.labels = pd.Series(self.kmeans.labels_, name='Cluster_Label')
+        data = self.load_data(dataset_id, embedding_id)
+        self.scaled_data = self.scale_data(data)
+        self.clusterer.fit(self.scaled_data)
+        self.labels = pd.Series(self.clusterer.labels_, index=data.index, name='Cluster_Label')
+        #self.save_labels()
         return self.labels
 
-    def predict(self, data: pd.DataFrame) -> pd.Series:
-        """
-        Predict cluster labels for new data using the fitted K-Means model.
-        :param data: DataFrame containing new data to assign to clusters.
-        :return: A Series of predicted cluster labels.
-        """
-        if self.kmeans is None:
-            raise ValueError("Model is not fitted. Call `fit` first.")
 
-        cluster_labels = self.kmeans.predict(data)
-        return pd.Series(cluster_labels, name='Cluster_Label')
+
+
