@@ -167,23 +167,14 @@ class BaseEmbedding:
                 :param sampling_rate: The sampling rate for the audio files (default is 48,000).
                 :return: A pandas DataFrame containing audio file paths and any other relevant metadata.
                 """
-        # For standalone testing without flask. Will remove after embeddings test
-        if flask_server:
-            with flask_server.app_context():
-                path_dataset = sqlalchemy_db.session.execute(sqlalchemy_db.select(Dataset.path_audio).where(
-                    Dataset.dataset_name == dataset_name)).scalar_one_or_none()
-        else:
-            path_dataset = '/Users/ridasaghir/Desktop/data/anura_subset'
-        # Fetch the path to the dataset from the database using a Flask app context.
-        # with flask_server.app_context():
-        #     path_dataset = sqlalchemy_db.session.execute(sqlalchemy_db.select(Dataset.path_audio).where(
-        #         Dataset.dataset_name == dataset_name)).scalar_one_or_none()
+
+        self.path_dataset = self.get_path_dataset()
         extensions = ['wav', 'aac', 'm4a', 'flac', 'mp3']
-        list_of_audio_files = []
+        extensions += [ext.upper() for ext in extensions]
+        self.list_of_audio_files = []
         for extension in extensions:
-            audio_files = glob.glob(os.path.join(path_dataset, '**', '*.' + extension.lstrip('.')),
-                                            recursive=True)
-            list_of_audio_files.extend(audio_files)
+            audio_files = glob.glob(os.path.join(self.path_dataset, '**', '*.' + extension), recursive=True)
+            self.list_of_audio_files.extend(audio_files)
 
         # If a Dask client is provided, parallelize the audio chunking process using Dask.
         if self.dask_client is not None:
@@ -205,7 +196,7 @@ class BaseEmbedding:
             self.data = pd.concat(dfs_audio)
 
         # Return the concatenated DataFrame of processed audio files.
-        return df_audio
+        return self.data
 
 
 def compute_embeddings(dataset_name: str, embedding_method: str, flask_server):
