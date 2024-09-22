@@ -108,8 +108,14 @@ class BaseEmbedding:
             :return: A pandas DataFrame indexed by 'filename' and a data column 'audio_data' containing processed audio chunks.
         """
 
-    def __init__(self, model_path: str, dataset_name: str, dask_client: dask.distributed.client.Client or None = None,
-                 flask_server=None) -> None:
+    def __init__(
+            self,
+            dataset_name: str,
+            clip_duration: float = 3.0,
+            model_path: str or pathlib.Path or None = None,
+            sampling_rate: int or None = None,
+            dask_client: dask.distributed.client.Client or None = None
+    ) -> None:
         """
         Initialize the BaseEmbedding class with the model path and an optional Dask client.
 
@@ -119,11 +125,19 @@ class BaseEmbedding:
         :param sampling_rate: Sample rate used by `librosa.load`. If None, native sampling rate will be used.
         :param dask_client: Optional Dask client for handling distributed task execution.
         """
+
+        # Input args
         self.dataset_name = dataset_name
+        self.model_path = model_path
+        self.sampling_rate = sampling_rate
+        self.clip_duration = clip_duration
         self.dask_client = dask_client  # Dask client is used for distributed processing of tasks.
+
+        # Placeholders
         self.data = None
         self.embeddings = None
-        self.model_path = model_path
+        self.list_of_audio_files = None
+        self.path_dataset = None
 
     def load_model(self):
         """
