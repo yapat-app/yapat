@@ -30,7 +30,7 @@ class Affinity(BaseClustering):
         data = self.load_data(dataset_id, embedding_id)
         self.scaled_data = self.scale_data(data)
         self.clusterer.fit(self.scaled_data)
-        self.labels = pd.Series(self.clusterer.labels_, index=data.index, name='Cluster_Label')
+        self.labels = pd.DataFrame(self.clusterer.labels_, columns=['Cluster Label'], index=data.index)
         #self.save_labels()
         return self.labels
 

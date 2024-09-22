@@ -21,7 +21,7 @@ class KMeansClustering(BaseClustering):
         :param min_cluster_size: The minimum size of clusters. Clusters smaller than this size will be treated as noise.
         """
         super().__init__()
-        self.clusterer = KMeans(random_state=42)
+        self.clusterer = KMeans(random_state=42, n_clusters=10)
 
     def fit(self, dataset_id: int, embedding_id: int):
         """
@@ -31,9 +31,11 @@ class KMeansClustering(BaseClustering):
         data = self.load_data(dataset_id, embedding_id)
         self.scaled_data = self.scale_data(data)
         self.clusterer.fit(self.scaled_data)
-        self.labels = pd.Series(self.clusterer.labels_, index=data.index, name='Cluster_Label')
+        self.labels = pd.DataFrame(self.clusterer.labels_, columns=['Cluster Label'], index=data.index)
         #self.save_labels()
         return self.labels
+
+
 
 
 

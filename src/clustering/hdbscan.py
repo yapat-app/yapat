@@ -1,6 +1,5 @@
 from sklearn.cluster import HDBSCAN
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
 
 from clustering import BaseClustering
 
@@ -28,12 +27,9 @@ class HDBSCANClustering(BaseClustering):
         :return: DataFrame containing the cluster labels assigned to the data.
         """
         data = self.load_data(dataset_id, embedding_id)
-
-        scaler = StandardScaler()
-        self.scaled_data = scaler.fit_transform(data.values)
-
+        self.scaled_data = self.scale_data(data)
         self.clusterer.fit(self.scaled_data)
-        self.labels = pd.Series(self.clusterer.labels_, index=data.index, name='Cluster_Label')
+        self.labels = pd.DataFrame(self.clusterer.labels_, columns=['Cluster Label'], index=data.index)
         #self.save_labels()
         return self.labels
 
