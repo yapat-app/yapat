@@ -160,11 +160,6 @@ class BaseEmbedding:
         """
                 Read the dataset of audio files, and optionally process it using Dask for parallelization.
 
-                :param flask_server:
-                :param chunk_duration:
-                :param dataset_name: Name of the dataset to load from the database.
-                :param extension: File extension for audio files to be included (default is '.wav').
-                :param sampling_rate: The sampling rate for the audio files (default is 48,000).
                 :return: A pandas DataFrame containing audio file paths and any other relevant metadata.
                 """
 
