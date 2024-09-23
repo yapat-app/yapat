@@ -29,15 +29,15 @@ class BirdnetEmbedding(BaseEmbedding):
 
     process(dataset_name: str, extension: str = '.wav', sampling_rate: int = 48000):
         Processes the audio dataset to generate embeddings using the BirdNet model.
-
-    read_audio_dataset(dataset_name: str, extension: str = '.wav', sampling_rate: int = 48000):
-        Inherited from BaseEmbedding. Reads the audio dataset from the file system and optionally
-        processes it using Dask for parallel processing.
     """
 
-    def __init__(self, model_path='../assets/models/birdnet/V2.4/BirdNET_GLOBAL_6K_V2.4_Model',
-                 dask_client: dask.distributed.client.Client or None = None):
+    def __init__(self, dataset_name: str, clip_duration: float = 3.0, sampling_rate: int = 48000,
+                 model_path='../assets/models/birdnet/V2.4/BirdNET_GLOBAL_6K_V2.4_Model',
+                 dask_client: dask.distributed.client.Client = None):
         super().__init__(model_path, dask_client)
+        self.dataset_name = dataset_name
+        self.clip_duration = clip_duration
+        self.sampling_rate = sampling_rate
         self.model = None
 
     def load_model(self):
@@ -50,7 +50,7 @@ class BirdnetEmbedding(BaseEmbedding):
         tfsm_layer = tf.keras.layers.TFSMLayer(self.model_path, call_endpoint='embeddings')(input_layer)
         self.model = tf.keras.Model(inputs=input_layer, outputs=tfsm_layer)
 
-    def process(self, dataset_name: str, sampling_rate: int = 48000):
+    def process(self):
         """
         Process the dataset using the BirdNet model to generate embeddings.
 
@@ -58,7 +58,7 @@ class BirdnetEmbedding(BaseEmbedding):
         :param sampling_rate: The sampling rate for the audio files (default is 48,000).
         :return: A pandas DataFrame containing the generated embeddings.
         """
-        self.data = self.read_audio_dataset(dataset_name, sampling_rate, chunk_duration=3)
+        self.data = self.read_audio_dataset(self.dataset_name, self.sampling_rate, chunk_duration=self.clip_duration)
         self.load_model()
         results = []
         for row in self.data.iterrows():
