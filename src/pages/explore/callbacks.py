@@ -1,6 +1,6 @@
 import os
 
-from dash import Input, Output, State, callback
+from dash import Input, Output, State, callback, callback_context
 
 from schema_model import ClusteringMethod, EmbeddingMethod, DimReductionMethod, Dataset
 from src import sqlalchemy_db
@@ -20,8 +20,6 @@ def update_db_methods():
         method_names = [file[:-3] for file in os.listdir(package_name) if
                         file.endswith('.py') and file != '__init__.py']
         existing_methods = list_existing_methods(package_name)
-        # existing_methods = sqlalchemy_db.session.execute(sqlalchemy_db.select(PipelineTable.method_name)).fetchall()
-        # existing_methods = set([i[0] for i in existing_methods])
         method_names = set(method_names) - set(existing_methods)
         Table = pipeline_steps[package_name]
         add_methods += [Table(method_name=method_name) for method_name in method_names]
@@ -46,11 +44,16 @@ def list_existing_datasets():
     Output("modal-pipeline", "is_open"),
     Input("new-pipeline", "n_clicks"),
     Input("cancel-new-pipeline", "n_clicks"),
-    [State("modal-pipeline", "is_open")],
+    Input("create-pipeline", "n_clicks"),
+    State("modal-pipeline", "is_open"),
+    prevent_initial_call=True
 )
-def toggle_modal(btn_new, btn_cancel, is_open):
-    if btn_new or btn_cancel:
+def toggle_modal(btn_new, btn_cancel, btn_creat, is_open):
+    triggered_id = callback_context.triggered_id
+    if triggered_id in ["new-pipeline", "cancel-new-pipeline", "create-pipeline"]:
         is_open = not is_open
+    if triggered_id == "create-pipeline":
+        pass
     return is_open
 
 
