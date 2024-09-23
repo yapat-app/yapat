@@ -57,7 +57,10 @@ class BaseClustering:
         if dataset_id is None or embedding_id is None:
             return None
 
-
+        file_path = sqlalchemy_db.session.execute(
+            sqlalchemy_db.select(EmbeddingResult.file_path).where(and_(EmbeddingResult.dataset_id == dataset_id,
+                                                                       EmbeddingResult.embedding_id == embedding_id))
+        )
         if file_path.endswith('.csv'):
             self.data = pd.read_csv(file_path, index_col=0)
         elif file_path.endswith('.pkl'):
