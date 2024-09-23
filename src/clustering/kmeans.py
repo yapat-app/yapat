@@ -16,7 +16,7 @@ class KMeansClustering(BaseClustering):
 
     def __init__(self):
         """
-        Initialize the HDBSCANClustering class with the minimum cluster size.
+        Initialize the KMeansClustering class with the minimum cluster size.
 
         :param min_cluster_size: The minimum size of clusters. Clusters smaller than this size will be treated as noise.
         """
