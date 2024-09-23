@@ -24,7 +24,6 @@ if __name__ == 'extensions':
         dask_client = Client(":".join([host, str(port)]))
         logger.info("Connected to existing Dask client")
     else:
-        # cluster = LocalCluster(name='yapat_dask', n_workers=4, scheduler_port=8786, dashboard_address=':8787')
         cluster = LocalCluster(name='yapat_dask', n_workers=4, scheduler_port=port, dashboard_address=':8787')
         dask_client = Client(cluster)
         logger.info("Created new Dask client")
