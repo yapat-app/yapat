@@ -3,3 +3,4 @@
 /notebooks/
 /venv/
 /src/instance/
+.DS_Store
