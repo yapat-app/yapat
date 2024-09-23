@@ -22,7 +22,7 @@ class TSNE(BaseDimensionalityReduction):
         """
         Initialize the PCAReduction class.
 
-        :param n_components: The number of components for PCA.
+        :param n_components: The number of components for tsne.
         """
         super().__init__()
         self.n_components = n_components
