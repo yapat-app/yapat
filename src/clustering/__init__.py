@@ -1,12 +1,11 @@
-import pandas as pd
-
 import dask
+import pandas as pd
 from sklearn.preprocessing import StandardScaler
-
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import and_
 
 from extensions import sqlalchemy_db
-from schema_model import Dataset, EmbeddingResult
+from schema_model import Dataset, EmbeddingMethod, EmbeddingResult
+
 
 class BaseClustering:
     """
@@ -33,25 +32,30 @@ class BaseClustering:
 
     """
 
-    def __init__(self) -> None:
+    def __init__(self, dataset_name, embedding_method) -> None:
         """
         Initialize the BaseClustering class. Sets up the data and labels attributes.
         """
+        self.dataset_name = dataset_name
+        self.embedding_method = embedding_method
         self.data = None  # Will hold the data to be clustered.
         self.labels = None  # Will store the cluster labels after fitting the model.
 
-    def load_data(self, dataset_id: int, embedding_id: int) -> pd.DataFrame:
+    def load_data(self) -> pd.DataFrame:
         """
         Load the data to be clustered from a CSV or pickle file.
 
         :param file_path: Path to the data file (CSV or pickle format).
         :return: DataFrame containing the loaded data.
         """
-        embedding_result = sqlalchemy_db.session.query(EmbeddingResult).filter_by(
-            dataset_id=dataset_id,
-            embedding_id=embedding_id
-        ).one_or_none()
-        file_path =  embedding_result.file_path
+        dataset_id = sqlalchemy_db.session.execute(
+            sqlalchemy_db.select(Dataset.id).where(Dataset.dataset_name == self.dataset_name)
+        ).scalar_one_or_none()
+        embedding_id = sqlalchemy_db.session.execute(
+            sqlalchemy_db.select(EmbeddingMethod.id).where(EmbeddingMethod.method_name == self.embedding_method)
+        ).scalar_one_or_none()
+        if dataset_id is None or embedding_id is None:
+            return None
 
 
         if file_path.endswith('.csv'):
@@ -66,6 +70,7 @@ class BaseClustering:
         scaler = StandardScaler()
         scaled_data = scaler.fit_transform(data.values)
         return scaled_data
+
     def save_labels(self, file_path: str):
         """
         Save the cluster labels to a CSV or pickle file.
