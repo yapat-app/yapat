@@ -47,11 +47,12 @@ class BaseClustering:
         :param file_path: Path to the data file (CSV or pickle format).
         :return: DataFrame containing the loaded data.
         """
-        embedding_result = sqlalchemy_db.session.query(EmbeddingResult).filter_by(
-            dataset_id=dataset_id,
-            embedding_id=embedding_id
-        ).one_or_none()
-        file_path =  embedding_result.file_path
+        # embedding_result = sqlalchemy_db.session.query(EmbeddingResult).filter_by(
+        #     dataset_id=dataset_id,
+        #     embedding_id=embedding_id
+        # ).one_or_none()
+        # file_path =  embedding_result.file_path
+        file_path = '/Users/ridasaghir/Desktop/exp/anura/anura_encodings_INCT17.pkl'
 
 
         if file_path.endswith('.csv'):
@@ -101,8 +102,14 @@ def get_clustering_model(method_name: str, dask_client: dask.distributed.client.
     elif method_name == "kmeans":
         from clustering.kmeans import KMeansClustering
         return KMeansClustering()
+    elif method_name == "spectral":
+        from clustering.spectral import SPECTRALClustering
+        return SPECTRALClustering()
+    elif method_name == "optics":
+        from clustering.optics import OpticsClustering
+        return OpticsClustering()
     else:
-        raise ValueError(f"Unknown embedding method: {method_name}")
+        raise ValueError(f"Unknown Clustering method: {method_name}")
 
 
 
