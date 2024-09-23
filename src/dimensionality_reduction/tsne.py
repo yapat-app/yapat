@@ -41,4 +41,5 @@ class TSNE(BaseDimensionalityReduction):
         # Creating a DataFrame for the reduced data
         columns = [f'TSNE {i + 1}' for i in range(self.n_components)]
         self.transformed_data = pd.DataFrame(reduced_data, columns=columns, index=data.index)
+        #self.save_transformed_data(file_path)
         return self.transformed_data
