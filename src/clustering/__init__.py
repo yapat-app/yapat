@@ -94,29 +94,24 @@ class BaseClustering:
         # SQL Query for saving clustering results
 
 
-
-
-def get_clustering_model(method_name: str, dask_client: dask.distributed.client.Client or None = None):
+def get_clustering_model(method_name: str, *args, **kwargs):
     if method_name == "hdbscan":
         from clustering.hdbscan import HDBSCANClustering
-        return HDBSCANClustering()
+        return HDBSCANClustering(*args, **kwargs)
     elif method_name == "dbscan":
         from clustering.dbscan import DBSCANClustering
-        return DBSCANClustering()
+        return DBSCANClustering(*args, **kwargs)
     elif method_name == "affinity":
         from clustering.affinity import Affinity
-        return Affinity()
+        return Affinity(*args, **kwargs)
     elif method_name == "kmeans":
         from clustering.kmeans import KMeansClustering
-        return KMeansClustering()
+        return KMeansClustering(*args, **kwargs)
     elif method_name == "spectral":
         from clustering.spectral import SPECTRALClustering
-        return SPECTRALClustering()
+        return SPECTRALClustering(*args, **kwargs)
     elif method_name == "optics":
         from clustering.optics import OpticsClustering
-        return OpticsClustering()
+        return OpticsClustering(*args, **kwargs)
     else:
         raise ValueError(f"Unknown Clustering method: {method_name}")
-
-
-
