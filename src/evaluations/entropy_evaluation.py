@@ -15,6 +15,3 @@ class EntropyEvaluation(BaseEvaluation):
         self.evaluation_result = calculate_entropy(self.scaled_data)
         #self.save_result(self.evaluation_result)
         return self.evaluation_result
-
-entropy = EntropyEvaluation()
-entropy.calculate_result(1, 2)
