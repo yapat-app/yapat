@@ -1,6 +1,5 @@
 from sklearn.cluster import DBSCAN
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
 
 from clustering import BaseClustering
 
