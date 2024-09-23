@@ -47,6 +47,7 @@ class EmbeddingResult(sqlalchemy_db.Model):
     embedding_id = Column(Integer, ForeignKey('embedding_methods.id'), nullable=False)
     file_path = Column(String(255), nullable=False)  # Store path to the embedding file
     hyperparameters = Column(JSON, nullable=True)  # Hyperparameters stored as JSON
+    evaluation_results = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -77,6 +78,7 @@ class ClusteringResult(sqlalchemy_db.Model):
     cluster_file_path = Column(String(255),
                                nullable=False)  # Store path to the clustering result file
     hyperparameters = Column(JSON, nullable=True)  # Clustering hyperparameters stored as JSON
+    evaluation_results = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
