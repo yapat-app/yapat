@@ -13,14 +13,14 @@ class DBSCANClustering(BaseClustering):
 
     """
 
-    def __init__(self):
+    def __init__(self, eps:str = 0.001):
         """
         Initialize the DBSCANClustering class with the minimum cluster size.
 
         :param min_cluster_size: The minimum size of clusters. Clusters smaller than this size will be treated as noise.
         """
         super().__init__()
-        self.clusterer = DBSCAN(eps=0.001)
+        self.clusterer = DBSCAN(eps=eps)
 
     def fit(self, dataset_id: int, embedding_id: int):
         """
