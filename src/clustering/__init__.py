@@ -47,12 +47,11 @@ class BaseClustering:
         :param file_path: Path to the data file (CSV or pickle format).
         :return: DataFrame containing the loaded data.
         """
-        # embedding_result = sqlalchemy_db.session.query(EmbeddingResult).filter_by(
-        #     dataset_id=dataset_id,
-        #     embedding_id=embedding_id
-        # ).one_or_none()
-        # file_path =  embedding_result.file_path
-        file_path = '/Users/ridasaghir/Desktop/exp/anura/anura_encodings_INCT17.pkl'
+        embedding_result = sqlalchemy_db.session.query(EmbeddingResult).filter_by(
+            dataset_id=dataset_id,
+            embedding_id=embedding_id
+        ).one_or_none()
+        file_path =  embedding_result.file_path
 
 
         if file_path.endswith('.csv'):
