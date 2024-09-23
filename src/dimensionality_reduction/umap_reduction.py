@@ -1,5 +1,5 @@
 import pandas as pd
-from umap_reduction import UMAP
+from umap import UMAP
 from dimensionality_reduction import BaseDimensionalityReduction
 
 class Umap(BaseDimensionalityReduction):

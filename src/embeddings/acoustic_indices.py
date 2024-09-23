@@ -55,9 +55,13 @@ class AcousticIndices(BaseEmbedding):
     compute_spectral_features(audio_file: str, sampling_rate: int = 48000, **kwargs) -> pd.DataFrame:
         Computes all spectral features for a single audio file using the `maad.features.all_spectral_features` method.
     """
-    def __init__(self, model_path=None,
-                 dask_client: dask.distributed.client.Client or None = None):
+    def __init__(self, dataset_name: str, sampling_rate: int = 48000, clip_duration: float = 3.0,
+                 model_path=None,
+                 dask_client: dask.distributed.client.Client = None, **kwargs):
         super().__init__(model_path, dask_client)
+        self.dataset_name = dataset_name
+        self.clip_duration = clip_duration
+        self.sampling_rate = sampling_rate
 
     def load_model(self):
         """
@@ -65,7 +69,7 @@ class AcousticIndices(BaseEmbedding):
         """
         pass  # No model loading required for this class.
 
-    def process(self, dataset_name: str, sampling_rate: int = 48000, **kwargs):
+    def process(self):
         """
         Processes the dataset by reading the audio files and computing the acoustic indices.
 
@@ -74,7 +78,7 @@ class AcousticIndices(BaseEmbedding):
         :param kwargs: Additional keyword arguments for feature computation (e.g., 'nperseg', 'roi', 'method').
         :return: A pandas DataFrame containing computed acoustic features for each audio file.
         """
-        self.data = self.read_audio_dataset(dataset_name, sampling_rate, chunk_duration=3)
+        self.data = self.read_audio_dataset(self.dataset_name, self.sampling_rate, chunk_duration=self.clip_duration)
         all_features = []
         for row in self.data.iterrows():
 
