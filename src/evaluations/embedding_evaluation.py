@@ -54,15 +54,15 @@ class EmbeddingsEvaluation(BaseEvaluation):
 
     def evaluate(self, dataset_id: int, embedding_id: int):
 
-        data = self.load_data(dataset_id, embedding_id)
+        data = self.load_data('embeddings', dataset_id, embedding_id)
         self.scaled_data = self.scale_data(data)
         entropy_result = self.calculate_entropy(self.scaled_data)
         explained_variance_result = self.calculate_explained_variance(self.scaled_data)
         #classifier_results = self.evaluate_classifier(self.scaled_data, y)
-        results = {
+        evaluation_results = {
             "Entropy": entropy_result,
             "Explained Variance": explained_variance_result,
            # **classifier_results
         }
-        # self.save_results()
-        return results
+        # self.save_results('embeddinds', evaluation_results, dataset_id, embedding_id)
+        return evaluation_results
