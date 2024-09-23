@@ -1,14 +1,16 @@
+import os
+import pathlib
+import datetime
+from multiprocessing import Pool
+
+import dask
+import librosa.feature
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-import librosa
-from tensorflow.keras import layers, Model
-from tensorflow.keras.optimizers import Adam
-from scipy.io import wavfile
-import dask
 
+from assets.models.vae_xprize import VAE
 from embeddings import BaseEmbedding
-from models.vae.autoencoder import VAE
 
 
 class VAEEmbedding(BaseEmbedding):
@@ -39,61 +41,140 @@ class VAEEmbedding(BaseEmbedding):
 
     """
 
-    def __init__(self, model_path='../assets/models/vae/autoencoder.py',
-                 dask_client: dask.distributed.client.Client or None = None,
-                 learning_rate = 0.05, batch_size=16, epochs=1, latent_dim = 60):
-        super().__init__(model_path, dask_client)
+    def __init__(
+            self,
+            dataset_name: str,
+            clip_duration: float = 3.0,
+            model_path: str or pathlib.Path or None = None,
+            sampling_rate: int or None = None,
+            dask_client: dask.distributed.client.Client or None = None,
+            learning_rate=0.05,
+            batch_size=16,
+            epochs=10,
+            latent_dim=128,
+            beta_kl=1,
+            kw_spectrograms: dict or None = None
+    ):
+        super().__init__(dataset_name, clip_duration, model_path, sampling_rate, dask_client)
         self.learning_rate = learning_rate
         self.epochs = epochs
         self.batch_size = batch_size
         self.latent_dim = latent_dim
+        self.beta_kl = beta_kl
+        self.kw_spectrograms = kw_spectrograms or {
+            "resolution": 0.05,
+            "overlap": 0.5,
+            "freq_min": 10,
+            "freq_max": 22050,
+            "n_freqs": 400
+        }
 
-    def _preprocess(self, signal, sample_rate, duration, frame_size, hop_length, min_val, max_val):
+        self.model = None
+        self.spectrograms = None
 
-        num_expected_samples = int(sample_rate * duration)
-        # Pad the signal if necessary
-        if len(signal) < num_expected_samples:
-            num_missing_samples = num_expected_samples - len(signal)
-            signal = np.pad(signal, (0, num_missing_samples), mode='constant')
-        stft = librosa.stft(signal, n_fft=frame_size, hop_length=hop_length)[:-1]
-        spectrogram = np.abs(stft)
-        log_spectrogram = librosa.amplitude_to_db(spectrogram)
-        min_val = log_spectrogram.min()
-        max_val = log_spectrogram.max()
-        norm_log_spectrogram = (log_spectrogram - min_val) / (max_val - min_val)
-        norm_log_spectrogram = norm_log_spectrogram * (max_val - min_val) + min_val
-        return norm_log_spectrogram, min_val, max_val
+        if not np.isclose(self.clip_duration, 3.0):
+            raise ValueError(f"VAE model expects 3.0-s long clips. Got {self.clip_duration} s")
+
+    def compute_spectrograms(self):
+        if self.data is None:
+            self.read_audio_dataset()
+        # If a Dask client is provided, parallelize the audio chunking process using Dask.
+        if self.dask_client is not None:
+            # Use Dask to map audio files to chunking tasks and gather the results.
+
+            n_fft = int(self.kw_spectrograms.get('resolution') * self.sampling_rate)
+            hop_length = int(n_fft * (1 - self.kw_spectrograms.get('overlap')))
+
+            task_spectrograms = self.dask_client.map(
+                _compute_spectrogram,
+                self.data['audio_data'],
+                [self.sampling_rate] * len(self.list_of_audio_files),
+                [self.kw_spectrograms.get('resolution')] * len(self.list_of_audio_files),
+                [self.kw_spectrograms.get('overlap')] * len(self.list_of_audio_files),
+                [self.kw_spectrograms.get('freq_min')] * len(self.list_of_audio_files),
+                [self.kw_spectrograms.get('freq_max')] * len(self.list_of_audio_files),
+                [self.kw_spectrograms.get('n_freqs')] * len(self.list_of_audio_files),
+            )
+            self.spectrograms = self.dask_client.gather(task_spectrograms)  # Concatenate the results.
+        else:
+            # If no Dask client is provided, process the audio files locally.
+            # TODO Use tensorflow, or at least ensure it scales beyond memory capacity
+            with Pool() as pool:
+                # Use multiprocessing to process audio files in parallel
+                spectrograms = pool.starmap(
+                    _compute_spectrogram,
+                    [(audio_data, self.sampling_rate, self.kw_spectrograms.get('resolution'),
+                      self.kw_spectrograms.get('overlap'), self.kw_spectrograms.get('freq_min'),
+                      self.kw_spectrograms.get('freq_max'), self.kw_spectrograms.get('n_freqs')) for audio_data in
+                     self.data['audio_data']]
+                )
+            self.spectrograms = spectrograms
 
     def load_model(self):
-        # Structure for 3 seconds audio files
-        autoencoder = VAE(
-            input_shape=(256, 282, 1),
-            conv_filters=(512, 256, 128, 64, 32),
-            conv_kernels=(3, 3, 3, 3, 3),
-            conv_strides=(1, 2, 2, 2, 1),
-            latent_space_dim=60
-        )
-        autoencoder.summary()
-        autoencoder.compile(self.learning_rate)
-        return autoencoder
+        input_shape = (self.kw_spectrograms.get('n_freqs'), int(1 + self.clip_duration / (
+                self.kw_spectrograms.get('resolution') * (1 - self.kw_spectrograms.get('overlap')))), 1)
+        self.model = VAE(input_shape=input_shape, latent_dim=self.latent_dim, beta_kl=self.beta_kl)
+        self.model.compile(tf.keras.optimizers.Adam(learning_rate=self.learning_rate))
+        return
 
+    def train_model(self):
+        if self.model is None:
+            self.load_model()
+        os.makedirs(os.path.join('instance', 'tensorboard'), exist_ok=True)
+        model_id_string = f"VAE_dim{self.latent_dim:03d}_" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        ds_train = tf.data.Dataset.from_tensor_slices(self.spectrograms)
+        ds_train = tf.data.Dataset.zip((ds_train, ds_train))
+        ds_train = ds_train.batch(self.batch_size).prefetch(buffer_size=self.batch_size)
+        early_stopping = tf.keras.callbacks.EarlyStopping(monitor='reconstruction_loss', patience=3,
+                                                          restore_best_weights=True, mode="min")
 
-    def process(self, dataset_name: str, sampling_rate: int = 48000):
+        history = self.model.fit(ds_train, epochs=self.epochs, verbose=2, callbacks=[early_stopping])
+        return history
 
-        self.data = self.read_audio_dataset(dataset_name, sampling_rate, chunk_duration=3)
-        x_train = []
-        for row in self.data.iterrows():
-            norm_log_spectrogram, min_val, max_val = self._preprocess(row[1].audio_data, sample_rate=sampling_rate, duration=3,
-                                                                      frame_size=512,
-                                                                      hop_length=512, min_val=0, max_val=1)
-            norm_log_spectrogram = norm_log_spectrogram[..., np.newaxis]
-            x_train.append(norm_log_spectrogram)
-
-        autoencoder = self.load_model()
-        x_train = np.array(x_train)
-        autoencoder.train(x_train, self.batch_size, self.epochs)
-        autoencoder.save("vae_model")
-        encodings, _, _ = autoencoder.encoder.predict(x_train)
-        self.embeddings = pd.DataFrame(encodings, index=self.data.index, columns=[f'embedding_{i}' for i in range(self.latent_dim)])
+    def process(self):
+        if self.data is None:
+            self.data = self.read_audio_dataset()
+        if self.spectrograms is None:
+            self.compute_spectrograms()
+        if self.model is None:
+            self.load_model()
+        history = self.train_model()
+        ds_test = tf.data.Dataset.from_tensor_slices(self.spectrograms)
+        embeddings, _, _ = self.model.encoder.predict(ds_test)
+        self.embeddings = pd.DataFrame(embeddings, index=self.data.index,
+                                       columns=[f'embedding_dim_{i}' for i in range(self.latent_dim)])
         return self.embeddings
 
+
+def _compute_spectrogram(
+        audio: np.array,
+        sample_rate: int,
+        resolution: float,
+        overlap: float,
+        freq_min: float,
+        freq_max: float or None,
+        n_freqs: int,
+        **kwargs
+):
+    n_fft = int(resolution * sample_rate)
+    hop_length = int(n_fft * (1 - overlap))
+
+    # Compute the magnitude spectrogram
+    S = np.abs(librosa.stft(y=audio, n_fft=n_fft, hop_length=hop_length))
+
+    # Convert the spectrogram to the mel scale
+    mel_basis = librosa.filters.mel(sr=sample_rate, n_fft=n_fft, n_mels=n_freqs, fmin=freq_min, fmax=freq_max)
+
+    # Apply the mel filter bank
+    S_mel = np.dot(mel_basis, S)
+
+    # Convert the mel spectrogram to dB
+    S_mel_db = librosa.amplitude_to_db(S_mel)
+
+    # Apply robust scaling
+    S_mel_db = (S_mel_db - np.percentile(S_mel_db, 50)) / (
+            np.percentile(S_mel_db, 75) - np.percentile(S_mel_db, 25))  # Robust scaling
+
+    S_mel_db = np.expand_dims(S_mel_db, axis=2)
+
+    return S_mel_db
