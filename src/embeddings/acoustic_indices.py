@@ -6,7 +6,7 @@ import dask
 from embeddings import BaseEmbedding
 
 
-def compute_spectral_features(audio_file: np.array, sampling_rate: int or None = None, **kwargs) -> pd.DataFrame:
+def compute_spectral_features(audio_file: np.array, sampling_rate: int, **kwargs) -> pd.DataFrame:
     """
     Compute all spectral features for a single audio file using the `maad.features.all_spectral_features` method.
 

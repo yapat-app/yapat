@@ -10,11 +10,10 @@ import pandas as pd
 import tensorflow as tf
 from dash import html, callback, Input, Output, State
 
-from embeddings import register_dataset
+from pages.explore.callbacks import list_existing_datasets
+from pages.home import register_dataset
 from schema_model import Dataset
 from src import sqlalchemy_db, server
-# from pages import get_list_files, split_single_audio, load_audio_files_with_tf_dataset
-from pages.explore.callbacks import list_existing_datasets
 
 logger = logging.getLogger(__name__)
 
@@ -161,11 +160,12 @@ def update_project_summary(dataset_name):
     if dataset_name:
         with server.app_context():
             path_dataset = sqlalchemy_db.session.execute(
-                sqlalchemy_db.select(Dataset.path_audio).where(Dataset.dataset_name == dataset_name)).scalar_one_or_none()
+                sqlalchemy_db.select(Dataset.path_audio).where(
+                    Dataset.dataset_name == dataset_name)).scalar_one_or_none()
         all_clips = glob.glob(os.path.join(path_dataset, '**', '*.wav'), recursive=True)
-    #     annotations = pd.read_csv(os.path.join('projects', project_name, 'annotations.csv'))
-    #     n_labeled = len(annotations['sound_clip_url'].unique())
-    #     n_classes = len(annotations['label'].unique())
+        # annotations = pd.read_csv(os.path.join('projects', project_name, 'annotations.csv'))
+        # n_labeled = len(annotations['sound_clip_url'].unique())
+        # n_classes = len(annotations['label'].unique())
         n_labeled = '[UNK]'
         n_classes = '[UNK]'
         msg = f'Found {len(all_clips)} audio files, {n_labeled} of which are labelled for {n_classes} class categories'
