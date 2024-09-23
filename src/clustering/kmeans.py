@@ -13,14 +13,14 @@ class KMeansClustering(BaseClustering):
 
     """
 
-    def __init__(self):
+    def __init__(self, n_clusters: int = 8):
         """
         Initialize the KMeansClustering class with the minimum cluster size.
 
         :param min_cluster_size: The minimum size of clusters. Clusters smaller than this size will be treated as noise.
         """
         super().__init__()
-        self.clusterer = KMeans(random_state=42, n_clusters=10)
+        self.clusterer = KMeans(random_state=42, n_clusters=n_clusters)
 
     def fit(self, dataset_id: int, embedding_id: int):
         """
