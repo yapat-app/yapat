@@ -1,3 +1,5 @@
+import os
+import random
 import logging
 
 import dash
@@ -13,6 +15,12 @@ from schema_model import User
 from src import login_manager, sqlalchemy_db, server
 from pages.explore.callbacks import update_db_methods
 from utils.settings import APP_HOST, APP_PORT, APP_DEBUG, DEV_TOOLS_PROPS_CHECK
+
+server = Flask(__name__)
+server.config.update(SECRET_KEY=os.getenv('SECRET_KEY'))
+server.config.update(SQLALCHEMY_DATABASE_URI='sqlite:///users.db')
+server.config.update(SQLALCHEMY_TRACK_MODIFICATIONS=False)
+server.secret_key = str(random.randint(a=0, b=1000000))
 
 logger = logging.getLogger(__name__)
 
