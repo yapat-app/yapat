@@ -71,7 +71,7 @@ class ClusteringResult(sqlalchemy_db.Model):
     __bind_key__ = "pipeline_db"
 
     result_id = Column(Integer, primary_key=True)
-    embedding_id = Column(Integer, ForeignKey('embedding_results.embedding_id'),
+    embedding_id = Column(Integer, ForeignKey('embedding_results.id'),
                           nullable=False)
     method_id = Column(Integer, ForeignKey('clustering.method_id'),
                        nullable=False)
