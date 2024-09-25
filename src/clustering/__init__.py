@@ -1,10 +1,13 @@
 import dask
+import os
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
+import uuid
+
 from sqlalchemy import and_
 
 from extensions import sqlalchemy_db
-from schema_model import Dataset, EmbeddingMethod, EmbeddingResult
+from schema_model import Dataset, EmbeddingMethod, EmbeddingResult, ClusteringResult
 
 
 class BaseClustering:
@@ -48,19 +51,21 @@ class BaseClustering:
         :param file_path: Path to the data file (CSV or pickle format).
         :return: DataFrame containing the loaded data.
         """
-        dataset_id = sqlalchemy_db.session.execute(
+        self.dataset_id = sqlalchemy_db.session.execute(
             sqlalchemy_db.select(Dataset.id).where(Dataset.dataset_name == self.dataset_name)
         ).scalar_one_or_none()
-        embedding_id = sqlalchemy_db.session.execute(
+        self.embedding_id = sqlalchemy_db.session.execute(
             sqlalchemy_db.select(EmbeddingMethod.id).where(EmbeddingMethod.method_name == self.embedding_method)
         ).scalar_one_or_none()
-        if dataset_id is None or embedding_id is None:
+        if self.dataset_id is None or self.embedding_id is None:
             return None
 
         file_path = sqlalchemy_db.session.execute(
-            sqlalchemy_db.select(EmbeddingResult.file_path).where(and_(EmbeddingResult.dataset_id == dataset_id,
-                                                                       EmbeddingResult.embedding_id == embedding_id))
+            sqlalchemy_db.select(EmbeddingResult.file_path).where(and_(EmbeddingResult.dataset_id == self.dataset_id,
+                                                                       EmbeddingResult.embedding_id == self.embedding_id))
         )
+
+        file_path = '/Users/ridasaghir/Desktop/exp/anura/anura_encodings.pkl'
         if file_path.endswith('.csv'):
             self.data = pd.read_csv(file_path, index_col=0)
         elif file_path.endswith('.pkl'):
@@ -74,24 +79,21 @@ class BaseClustering:
         scaled_data = scaler.fit_transform(data.values)
         return scaled_data
 
-    def save_labels(self, file_path: str):
+    def save_labels(self, labels):
         """
         Save the cluster labels to a CSV or pickle file.
 
         :param file_path: Path where the cluster labels will be saved.
         """
+        self.labels = labels
         if self.labels is None:
             raise ValueError("No cluster labels found. Fit the model or predict labels first.")
 
-        # Save as CSV or pickle depending on the file extension.
-        if file_path.endswith('.csv'):
-            self.labels.to_csv(file_path, index=False)
-        elif file_path.endswith('.pkl'):
-            self.labels.to_pickle(file_path)
-        else:
-            raise ValueError(f"Unsupported file type: {file_path}. Please use CSV or pickle.")
+        unique_filename = f"{uuid.uuid4().hex}.pkl"
+        file_path = os.path.join('results/', unique_filename)
+        self.labels.to_pickle(file_path)
+        # SQL QUERY TO SAVE RESULT
 
-        # SQL Query for saving clustering results
 
 
 def get_clustering_model(method_name: str, *args, **kwargs):
