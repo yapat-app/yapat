@@ -31,7 +31,7 @@ class KMeansClustering(BaseClustering):
         self.scaled_data = self.scale_data(data)
         self.clusterer.fit(self.scaled_data)
         self.labels = pd.DataFrame(self.clusterer.labels_, columns=['Cluster Label'], index=data.index)
-        self.save_labels(,self.labels)
+        self.save_labels(self.labels)
         return self.labels
 
 
