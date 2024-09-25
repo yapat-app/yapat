@@ -4,8 +4,8 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import html, dcc
 
-from .callbacks import list_existing_methods
-from .. import login_required_layout
+from pages import login_required_layout
+from pages.explore.callbacks import list_existing_methods
 
 logger = logging.getLogger(__name__)
 

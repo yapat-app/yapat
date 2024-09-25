@@ -139,7 +139,7 @@ def gen_embeddings(project_name, embedding_model):
 def update_options_project(project_value, project_create, brand, project_name, path_audio, embedding_model, data):
     if dash.ctx.triggered_id == 'button-project-create':
         # dask_client.submit(register_dataset, dataset_name=project_name, path_audio=path_audio)
-        register_dataset(dataset_name=project_name, path_audio=path_audio, flask_server=server)
+        register_dataset(dataset_name=project_name, path_audio=path_audio)
         project_value = project_name
     elif data.get('project_name') and not project_value:
         project_value = data['project_name']

@@ -14,6 +14,7 @@ from sqlalchemy.orm import sessionmaker
 
 from extensions import sqlalchemy_db
 from schema_model import Dataset, EmbeddingMethod
+from src import server
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,7 @@ def _split_audio_into_chunks(filename: str, chunk_duration: float, sampling_rate
     # Load the audio file with librosa
     audio, sampling_rate = librosa.load(filename, sr=sampling_rate)
 
+    # Ensure the length is a multiple of the chunk size by truncating the extra samples
     chunk_size = sampling_rate * chunk_duration
 
     # Clip audio at a multiple of chunk_size
@@ -201,8 +203,8 @@ class BaseEmbedding:
         return self.data
 
 
-def compute_embeddings(dataset_name: str, embedding_method: str, flask_server):
-    with flask_server.app_context():
+def compute_embeddings(dataset_name: str, embedding_method: str):
+    with server.app_context():
         path_audio = sqlalchemy_db.session.execute(
             sqlalchemy_db.select(Dataset.path_audio).filter_by(dataset_name=dataset_name)).scalar_one_or_none()
         embedding = sqlalchemy_db.session.execute(
@@ -240,4 +242,3 @@ def get_embedding_model(method_name, *args, **kwargs):
 
     else:
         raise ValueError(f"Unknown embedding method: {method_name}")
-
