@@ -49,6 +49,8 @@ class EmbeddingResult(sqlalchemy_db.Model):
     hyperparameters = Column(JSON, nullable=True)  # Hyperparameters stored as JSON
     evaluation_results = Column(JSON, nullable=True)
     task_state = Column(String(64), nullable=False)
+    task_key = Column(String(64), unique=True)
+    last_changed = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
