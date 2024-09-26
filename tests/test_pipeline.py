@@ -15,7 +15,7 @@ class TestDaskAudioPipeline(unittest.TestCase):
         self.test_dir = tempfile.TemporaryDirectory()
 
     def tearDown(self):
-        """Clean up the temporary directory after each test."""
+        """Clean up the temporary directory and Dask resources after each test."""
         self.test_dir.cleanup()
 
     def test_compute_embeddings(self):
