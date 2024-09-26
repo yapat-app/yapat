@@ -126,9 +126,9 @@ class BaseEmbedding:
         self.dask_client = dask_client  # Dask client is used for distributed processing of tasks.
 
         # Placeholders
-        self.data = None
-        self.embeddings = None
-        self.list_of_audio_files = None
+        self.data = pd.DataFrame()  # Initialize as empty DataFrame
+        self.embeddings = pd.DataFrame()  # Initialize as empty DataFrame
+        self.list_of_audio_files = []
         self.path_dataset = None
 
     def load_model(self):

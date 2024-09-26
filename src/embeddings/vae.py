@@ -76,7 +76,7 @@ class VAEEmbedding(BaseEmbedding):
             raise ValueError(f"VAE model expects 3.0-s long clips. Got {self.clip_duration} s")
 
     def compute_spectrograms(self):
-        if self.data is None:
+        if self.data.empty:
             self.read_audio_dataset()
         # If a Dask client is provided, parallelize the audio chunking process using Dask.
         if self.dask_client is not None:
