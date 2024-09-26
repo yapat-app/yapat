@@ -14,8 +14,42 @@ from pages.explore.callbacks import list_existing_datasets
 from pages.home import register_dataset
 from schema_model import Dataset
 from src import sqlalchemy_db, server
+from sqlalchemy.exc import SQLAlchemyError
+
 
 logger = logging.getLogger(__name__)
+
+
+@callback(
+    Input('dataset-list', 'value'),  # This is the RadioItems for selecting a dataset
+    prevent_initial_call=True
+)
+def update_selected_dataset(selected_dataset_name):
+    # If no dataset is selected, do nothing
+    if not selected_dataset_name:
+        return
+    session = sqlalchemy_db.session
+    try:
+        session.query(Dataset).update({Dataset.is_selected: False})
+        # Set is_selected to True for the selected dataset
+        selected_dataset = session.query(Dataset).filter_by(dataset_name=selected_dataset_name).first()
+        if selected_dataset:
+            selected_dataset.is_selected = True
+            session.commit()  # Commit changes to the database
+            # Return dataset summary for UI display
+            # return html.Div([
+            #     html.P(f"Dataset: {selected_dataset.dataset_name}"),
+            #     html.P(f"Created At: {selected_dataset.created_at}"),
+            #     html.P(f"Audio Path: {selected_dataset.path_audio}")
+            # ])
+            return
+
+    except SQLAlchemyError as e:
+        # Roll back transaction in case of any errors
+        session.rollback()
+        logger.error(f"Error updating dataset selection: {e}")
+        return
+
 
 
 def scan_projects():
@@ -157,11 +191,21 @@ def update_options_project(project_value, project_create, brand, project_name, p
 )
 def update_project_summary(dataset_name):
     children = [html.H5('Dataset summary')]
-    if dataset_name:
+    if not dataset_name:
+        children.append(html.P("No dataset selected. Please select a dataset to view the summary."))
+        return children
+    try:
         with server.app_context():
             path_dataset = sqlalchemy_db.session.execute(
                 sqlalchemy_db.select(Dataset.path_audio).where(
                     Dataset.dataset_name == dataset_name)).scalar_one_or_none()
+        if path_dataset is None:
+            children.append(html.P(f"Dataset '{dataset_name}' does not have a valid audio path."))
+            return children
+        if not os.path.exists(path_dataset):
+            children.append(html.P(f"The audio path '{path_dataset}' does not exist."))
+            return children
+
         all_clips = glob.glob(os.path.join(path_dataset, '**', '*.wav'), recursive=True)
         # annotations = pd.read_csv(os.path.join('projects', project_name, 'annotations.csv'))
         # n_labeled = len(annotations['sound_clip_url'].unique())
@@ -173,6 +217,16 @@ def update_project_summary(dataset_name):
         children.append(html.P(msg))
     #     children.append(dcc.Link("Start annotating", href='/annotate'))
     #     children.append(html.P('Export project data'))
+
+    except SQLAlchemyError as e:
+        # Log the error and return a friendly error message
+        logger.error(f"Error fetching dataset '{dataset_name}': {e}")
+        children.append(
+            html.P(f"An error occurred while fetching the dataset '{dataset_name}'. Please try again later."))
+    except Exception as e:
+        logger.error(f"Unexpected error while processing dataset '{dataset_name}': {e}")
+        children.append(html.P(f"An unexpected error occurred. Please try again later."))
+
     return children
 
 
