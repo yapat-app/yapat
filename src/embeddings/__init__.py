@@ -104,9 +104,9 @@ class BaseEmbedding:
             self,
             dataset_name: str,
             clip_duration: float = 3.0,
-            model_path: str or pathlib.Path or None = None,
-            sampling_rate: int or None = None,
-            dask_client: dask.distributed.client.Client or None = None
+            model_path: Optional[Union[str, pathlib.Path]] = None,
+            sampling_rate: Optional[int] = None,
+            dask_client: Optional[Union[Client, str]] = None
     ) -> None:
         """
         Initialize the BaseEmbedding class with the model path and an optional Dask client.

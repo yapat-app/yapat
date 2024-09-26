@@ -1,7 +1,11 @@
-import dask
+import os
+import pathlib
+from typing import Optional, Union
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from dask.distributed import Client
 
 from embeddings import BaseEmbedding
 
@@ -31,14 +35,16 @@ class BirdnetEmbedding(BaseEmbedding):
         Processes the audio dataset to generate embeddings using the BirdNet model.
     """
 
-    def __init__(self, dataset_name: str, clip_duration: float = 3.0, sampling_rate: int = 48000,
-                 model_path='../assets/models/birdnet/V2.4/BirdNET_GLOBAL_6K_V2.4_Model',
-                 dask_client: dask.distributed.client.Client = None):
-        super().__init__(model_path, dask_client)
-        self.dataset_name = dataset_name
-        self.clip_duration = clip_duration
-        self.sampling_rate = sampling_rate
-        self.model = None
+    def __init__(
+            self,
+            dataset_name: str,
+            clip_duration: float = 3.0,
+            model_path: Optional[Union[str, pathlib.Path]] = os.path.join('..', 'assets', 'models', 'birdnet', 'V2.4',
+                                                                          'BirdNET_GLOBAL_6K_V2.4_Model'),
+            sampling_rate: Optional[int] = None,
+            dask_client: Optional[Union[Client, str]] = None
+    ):
+        super().__init__(dataset_name, clip_duration, model_path, sampling_rate, dask_client)
 
     def load_model(self):
         """
@@ -58,7 +64,7 @@ class BirdnetEmbedding(BaseEmbedding):
         :param sampling_rate: The sampling rate for the audio files (default is 48,000).
         :return: A pandas DataFrame containing the generated embeddings.
         """
-        self.data = self.read_audio_dataset(self.dataset_name, self.sampling_rate, chunk_duration=self.clip_duration)
+        self.data = self.read_audio_dataset()
         self.load_model()
         results = []
         for row in self.data.iterrows():
