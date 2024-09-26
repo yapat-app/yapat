@@ -1,8 +1,12 @@
+import pathlib
+from typing import Optional, Union
+
+import maad
 import numpy as np
 import pandas as pd
-import maad
+from dask.distributed import Client
 from maad import sound, features
-import dask
+
 from embeddings import BaseEmbedding
 
 
@@ -55,13 +59,16 @@ class AcousticIndices(BaseEmbedding):
     compute_spectral_features(audio_file: str, sampling_rate: int = 48000, **kwargs) -> pd.DataFrame:
         Computes all spectral features for a single audio file using the `maad.features.all_spectral_features` method.
     """
-    def __init__(self, dataset_name: str, sampling_rate: int = 48000, clip_duration: float = 3.0,
-                 model_path=None,
-                 dask_client: dask.distributed.client.Client = None, **kwargs):
-        super().__init__(model_path, dask_client)
-        self.dataset_name = dataset_name
-        self.clip_duration = clip_duration
-        self.sampling_rate = sampling_rate
+
+    def __init__(
+            self,
+            dataset_name: str,
+            clip_duration: float = 3.0,
+            model_path: Optional[Union[str, pathlib.Path]] = None,
+            sampling_rate: Optional[int] = None,
+            dask_client: Optional[Union[Client, str]] = None
+    ):
+        super().__init__(dataset_name, clip_duration, model_path, sampling_rate, dask_client)
 
     def load_model(self):
         """
@@ -74,16 +81,17 @@ class AcousticIndices(BaseEmbedding):
         Processes the dataset by reading the audio files and computing the acoustic indices.
 
         :param dataset_name: Name of the dataset to process.
-        :param sampling_rate: Sampling rate for the audio files (default is 48,000).
+        :param sampling_rate: Sampling rate for the audio files.
         :param kwargs: Additional keyword arguments for feature computation (e.g., 'nperseg', 'roi', 'method').
         :return: A pandas DataFrame containing computed acoustic features for each audio file.
         """
-        self.data = self.read_audio_dataset(self.dataset_name, self.sampling_rate, chunk_duration=self.clip_duration)
+        if self.sampling_rate is None:
+            raise ValueError("Sampling rate must be specified.")
+        self.read_audio_dataset()
         all_features = []
         for row in self.data.iterrows():
-
-            temporal_indices = maad.features.all_temporal_alpha_indices(s=row[1].audio_data, fs=48000)
-            Sxx_power, tn, fn, _ = maad.sound.spectrogram(x=row[1].audio_data, fs=48000)
+            temporal_indices = maad.features.all_temporal_alpha_indices(s=row[1].audio_data, fs=self.sampling_rate)
+            Sxx_power, tn, fn, _ = maad.sound.spectrogram(x=row[1].audio_data, fs=self.sampling_rate)
             spectral_indices, per_bin_indices = maad.features.all_spectral_alpha_indices(Sxx_power, tn, fn)
             all_indices = temporal_indices.join(spectral_indices)
             all_features.append(all_indices)
