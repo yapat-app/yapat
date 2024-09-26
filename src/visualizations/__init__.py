@@ -20,7 +20,8 @@ class BaseVisualization:
 
     def load_data(self):
         # SQL query to be implemented for embedding_file_path and cluster_file_path
-
+        embedding_file_path = '/Users/ridasaghir/Desktop/exp/anura/anura_encodings.csv'
+        cluster_file_path = '/Users/ridasaghir/Desktop/exp/anura/anura_labels.csv'
         self.embeddings = pd.read_csv(embedding_file_path, index_col=0)
         self.cluster_labels = pd.read_csv(cluster_file_path, index_col=0)
         # self.embeddings = pd.read_pickle(embedding_file_path)
