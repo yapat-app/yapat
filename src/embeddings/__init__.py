@@ -12,9 +12,8 @@ import pandas as pd
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
-from extensions import sqlalchemy_db
-from schema_model import Dataset, EmbeddingMethod
-from src import server
+from schema_model import Dataset, EmbeddingMethod, EmbeddingResult
+from utils import glob_audio_dataset
 
 logger = logging.getLogger(__name__)
 
@@ -173,12 +172,7 @@ class BaseEmbedding:
                 """
 
         self.path_dataset = self.get_path_dataset()
-        extensions = ['wav', 'aac', 'm4a', 'flac', 'mp3']
-        extensions += [ext.upper() for ext in extensions]
-        self.list_of_audio_files = []
-        for extension in extensions:
-            audio_files = glob.glob(os.path.join(self.path_dataset, '**', '*.' + extension), recursive=True)
-            self.list_of_audio_files.extend(audio_files)
+        self.list_of_audio_files = glob_audio_dataset(path_dataset=self.path_dataset)
 
         # If a Dask client is provided, parallelize the audio chunking process using Dask.
         if self.dask_client is not None:

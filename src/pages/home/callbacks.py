@@ -14,6 +14,7 @@ from pages.explore.callbacks import list_existing_datasets
 from pages.home import register_dataset
 from schema_model import Dataset
 from src import sqlalchemy_db, server
+from utils import glob_audio_dataset
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +76,7 @@ def gen_queue(project_name, n=5):
     """
     Generates a queue of audio clips to be annotated.
     """
-    all_clips = glob.glob(os.path.join('projects', project_name, 'clips', '*.wav'))
+    all_clips = glob_audio_dataset(os.path.join('projects', project_name, 'clips'))
     n = min(n, len(all_clips))
     logging.info(f'Generating queue of {n} audio clips for project {project_name}')
     try:
@@ -98,7 +99,7 @@ def gen_embeddings(project_name, embedding_model):
     Generates embeddings for the audio clips in the project.
     """
     logging.info(f'Generating embeddings for project {project_name}')
-    all_clips = glob.glob(os.path.join('projects', project_name, 'clips', '*.wav'))
+    all_clips = glob_audio_dataset(os.path.join('projects', project_name, 'clips'))
 
     try:
         if embedding_model == 'birdnet':
@@ -162,7 +163,7 @@ def update_project_summary(dataset_name):
             path_dataset = sqlalchemy_db.session.execute(
                 sqlalchemy_db.select(Dataset.path_audio).where(
                     Dataset.dataset_name == dataset_name)).scalar_one_or_none()
-        all_clips = glob.glob(os.path.join(path_dataset, '**', '*.wav'), recursive=True)
+        all_clips = glob_audio_dataset(path_dataset=path_dataset)
         # annotations = pd.read_csv(os.path.join('projects', project_name, 'annotations.csv'))
         # n_labeled = len(annotations['sound_clip_url'].unique())
         # n_classes = len(annotations['label'].unique())
