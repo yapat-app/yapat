@@ -123,13 +123,29 @@ class BaseEmbedding:
         self.model_path = model_path
         self.sampling_rate = sampling_rate
         self.clip_duration = clip_duration
-        self.dask_client = dask_client  # Dask client is used for distributed processing of tasks.
+
+        # Store dask_client if provided
+        self.dask_client = self._initialize_dask_client(dask_client)
 
         # Placeholders
         self.data = pd.DataFrame()  # Initialize as empty DataFrame
         self.embeddings = pd.DataFrame()  # Initialize as empty DataFrame
         self.list_of_audio_files = []
         self.path_dataset = None
+
+    def _initialize_dask_client(self, dask_client: Optional[Union[Client, str]]) -> Optional[Client]:
+        """Initialize the Dask client based on the provided input."""
+        if dask_client is None:
+            return None
+        try:
+            return get_worker().client
+        except ValueError:
+            logger.debug('Not a worker')
+        if isinstance(dask_client, str):
+            return Client(dask_client)  # Create a Client from the address
+        elif isinstance(dask_client, Client):
+            return dask_client  # Use the provided Client instance
+        return None  # Default to None if no valid input
 
     def load_model(self):
         """
