@@ -149,13 +149,14 @@ class BaseEmbedding:
         Session = sessionmaker(bind=engine)
         session = Session()
 
-        # Fetch the path to the dataset from the database within this session
-        path_dataset = session.execute(
-            select(Dataset.path_audio).where(Dataset.dataset_name == self.dataset_name)
-        ).scalar_one()
-
-        # Close the session after the task is done
-        session.close()
+        try:
+            path_dataset = session.execute(
+                select(Dataset.path_audio).where(Dataset.dataset_name == self.dataset_name)
+            ).scalar_one()
+        except NoResultFound:
+            raise ValueError(f"No dataset found for name: {self.dataset_name}")
+        finally:
+            session.close()
 
         return path_dataset
 
@@ -168,24 +169,28 @@ class BaseEmbedding:
         self.path_dataset = self.get_path_dataset()
         self.list_of_audio_files = glob_audio_dataset(path_dataset=self.path_dataset)
 
-        # If a Dask client is provided, parallelize the audio chunking process using Dask.
-        if self.dask_client is not None:
-            # Use Dask to map audio files to chunking tasks and gather the results.
-            dfs_audio = self.dask_client.map(
-                _split_audio_into_chunks,
-                self.list_of_audio_files,
-                [self.clip_duration] * len(self.list_of_audio_files),  # Repeat clip_duration for each file
-                [self.sampling_rate] * len(self.list_of_audio_files)  # Repeat sampling_rate for each file
-            )
-            self.data = pd.concat(self.dask_client.gather(dfs_audio))  # Concatenate the results.
-        else:
-            # If no Dask client is provided, process the audio files locally.
-            with Pool() as pool:
-                # Use multiprocessing to process audio files in parallel
-                dfs_audio = pool.starmap(_split_audio_into_chunks,
-                                         [(path_audio_file, self.clip_duration, self.sampling_rate)
-                                          for path_audio_file in self.list_of_audio_files])
-            self.data = pd.concat(dfs_audio)
+        if not self.list_of_audio_files:
+            raise ValueError("No audio files found in the dataset.")
+
+            # if self.dask_client is not None:
+            #     dfs_audio = self.dask_client.map(
+            #         _split_audio_into_chunks,
+            #         self.list_of_audio_files,
+            #         [self.clip_duration] * len(self.list_of_audio_files),
+            #         [self.sampling_rate] * len(self.list_of_audio_files)
+            #     )
+            #     self.data = pd.concat(self.dask_client.gather(dfs_audio))
+            # else:
+            #     # Process audio files locally if no Dask client is provided
+            #     with Pool() as pool:
+            #         dfs_audio = pool.starmap(
+            #             _split_audio_into_chunks,
+            #             [(path_audio_file, self.clip_duration, self.sampling_rate) for path_audio_file in
+            #              self.list_of_audio_files]
+            #         )
+        dfs_audio = [_split_audio_into_chunks(path_audio_file, self.clip_duration, self.sampling_rate) for
+                     path_audio_file in self.list_of_audio_files]
+        self.data = pd.concat(dfs_audio)
 
         # Return the concatenated DataFrame of processed audio files.
         return self.data

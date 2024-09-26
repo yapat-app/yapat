@@ -2,6 +2,8 @@ import os
 import unittest
 from unittest.mock import patch
 
+import pandas as pd
+
 from embeddings import BaseEmbedding
 from extensions import dask_client
 
@@ -30,8 +32,8 @@ class TestBaseEmbedding(unittest.TestCase):
         self.assertEqual(self.base_embedding.model_path, self.model_path)
         self.assertEqual(self.base_embedding.sampling_rate, self.sample_rate)
         self.assertEqual(self.base_embedding.dask_client, self.dask_client)
-        self.assertIsNone(self.base_embedding.data)
-        self.assertIsNone(self.base_embedding.embeddings)
+        self.assertIs(self.base_embedding.data.empty, True)
+        self.assertIs(self.base_embedding.embeddings.empty, True)
 
     def test_load_model_not_implemented(self):
         """Test that load_model raises NotImplementedError if not overridden."""
@@ -53,6 +55,8 @@ class TestBaseEmbedding(unittest.TestCase):
 
         # Assertions
         mock_get_path_dataset.assert_called_once()
+        self.assertEqual(len(self.base_embedding.list_of_audio_files), 2, f"Should have 2 audio files, but got {len(self.base_embedding.list_of_audio_files)}")
+        self.assertEqual(result.shape, (46, 4), f"Expected shape to be (46, 4), but got {result.shape}")
 
     @patch.object(BaseEmbedding, 'get_path_dataset')
     def test_read_audio_dataset_local(self, mock_get_path_dataset):

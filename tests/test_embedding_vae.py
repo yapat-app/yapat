@@ -87,9 +87,9 @@ class TestVAEEmbedding(unittest.TestCase):
         )
 
         instance.load_model()
-        self.assertIsNotNone(self.model)
-        self.assertTrue(hasattr(self.model, 'fit'))
-        self.assertTrue(hasattr(self.model.encoder, 'predict'))
+        self.assertIsNotNone(instance.model)
+        self.assertTrue(hasattr(instance.model, 'fit'))
+        self.assertTrue(hasattr(instance.model.encoder, 'predict'))
 
 
 if __name__ == '__main__':
