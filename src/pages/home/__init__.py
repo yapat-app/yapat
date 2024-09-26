@@ -3,12 +3,12 @@ import logging
 from sqlalchemy.exc import SQLAlchemyError
 
 from schema_model import Dataset
-from src import sqlalchemy_db
+from src import server, sqlalchemy_db
 
 logger = logging.getLogger(__name__)
 
 
-def register_dataset(dataset_name, path_audio, flask_server):
+def register_dataset(dataset_name, path_audio, flask_server=server):
     with flask_server.app_context():
         try:
             sqlalchemy_db.session.add(Dataset(dataset_name=dataset_name, path_audio=path_audio))
