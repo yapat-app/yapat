@@ -71,3 +71,11 @@ def display_pipeline_summary(m_e, m_c, m_dv):
     msg = f"{n_pipelines} pipelines will be computed"
     if n_pipelines == 1: msg = msg.replace("pipelines", "pipeline")
     return msg
+
+
+@callback(
+    Output("new-pipeline-summary", "children"),
+    Input("methods-embedding", "value"),
+    Input("methods-clustering", "value"),
+    Input("methods-dimred-viz", "value")
+)

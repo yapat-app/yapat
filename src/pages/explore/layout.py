@@ -41,7 +41,7 @@ def layout():
             dbc.Row([
                 html.H2("Visualization Pipelines"),
                 html.P(["Mix and match methods for data representation/embedding, clustering, and "
-                        "dimensionality reduction. Visualize the results with THIS and THIS plot types"]),
+                        "dimensionality reduction. Visualize the results with Temporal and State Space plot types"]),
             ]),
 
             # Main
@@ -50,20 +50,48 @@ def layout():
                     dbc.Row([
                         # html.H5('Build pipeline'),
                         dbc.ButtonGroup([
-                            dbc.Button("Quickstart", id="quickstart-pipeline", n_clicks=0),
-                            dbc.Button("Load", id="load-pipeline", n_clicks=0),
-                            dbc.Button("New...", id="new-pipeline", n_clicks=0),
+                            #dbc.Button("Quickstart", id="quickstart-pipeline", n_clicks=0),
+                            dbc.Button("Load Pipeline", id="load-pipeline", n_clicks=0),
+                            dbc.Button("New Pipeline", id="new-pipeline", n_clicks=0),
                         ], vertical=True),
                     ], class_name='my-4')
-                ], width=1),
+                ], width=2),
+                # Right Sidebar - Evaluation and Visualization
                 dbc.Col([
                     dbc.Row([
-                        # html.H5('Visualize results'),
-                    ], class_name='my-4', id='pipeline-summary'),
+                        # Evaluation Section
+                        html.H5("Evaluation Metrics"),
+                        dbc.Row([
+                            html.P("F1 Score:"),
+                            html.Div(id='f1-score'),
+                            html.P("Accuracy Score:"),
+                            html.Div(id='prediction-score'),
+                            html.P("Explained Variance:"),
+                            html.Div(id='explained-variance'),
+                            html.P("Silhouette Score:"),
+                            html.Div(id='silhouette-score'),
+                            html.P("Davies-Bouldin Index:"),
+                            html.Div(id='davies-bouldin-index'),
+                        ], class_name='evaluation-metrics'),
+                    ], class_name='my-4'),
+
                     dbc.Row([
-                        # dbc.DropdownMenu()
-                    ], class_name='my-4')
-                ])
+                        # Visualization Section
+                        html.H5("Visualization"),
+                        dbc.Tabs([
+                            dbc.Tab(label='Cluster Time Histogram', tab_id='time-histogram'),
+                            dbc.Tab(label='Cluster Time Grid', tab_id='time-grid'),
+                            dbc.Tab(label='State Space Visualisation', tab_id='state-space'),
+                            dbc.Tab(label='Time Series Visualisation', tab_id='state-space'),
+                            dbc.Tab(label='Temporal Rose Plot', tab_id='state-space'),
+                            dbc.Tab(label='Explained Variance Plot', tab_id='state-space'),
+
+                        ], id='visualization-tabs', active_tab='time-histogram'),
+
+                        # Placeholder for visualizations
+                        html.Div(id='visualization-content', className='my-4')
+                    ])
+                ], width=9),
             ]),
 
             # Modals
