@@ -2,9 +2,9 @@ import logging
 
 import dash
 import dash_bootstrap_components as dbc
-from dash import html, dcc
+from dash import html, dcc, dash_table
 
-from .callbacks import list_existing_methods
+from .callbacks import list_existing_methods, fetch_embedding_and_clustering_methods
 from .. import login_required_layout
 
 logger = logging.getLogger(__name__)
@@ -33,15 +33,35 @@ dash.register_page(
 # ])
 
 
+
+
 @login_required_layout
 def layout():
+    columns = [
+        {"name": "Metric", "id": "metric"},
+        {"name": "BirdNET", "id": "birdnet"},
+        {"name": "Acoustic Indices", "id": "acoustic_indices"},
+        {"name": "VAE", "id": "vae"}
+    ]
+
+    # Define the data for each row
+    data = [
+        {"metric": "F1 Score (Time Prediction)", "birdnet": 0, "acoustic_indices": 0, "vae": 0},
+        {"metric": "Prediction Error (Time Prediction)", "birdnet": 0, "acoustic_indices": 0, "vae": 0},
+        {"metric": "F1 Score (Location Prediction)", "birdnet": 0, "acoustic_indices": 0, "vae": 0},
+        {"metric": "Prediction Error (Location Prediction)", "birdnet": 0, "acoustic_indices": 0, "vae": 0},
+        {"metric": "Silhouette Index", "birdnet": 0, "acoustic_indices": 0, "vae": 0},
+        {"metric": "Davies Bouldin Index", "birdnet": 0, "acoustic_indices": 0, "vae": 0}
+    ]
+
     layout = dbc.Container([
         html.Div([
             # Header
             dbc.Row([
                 html.H2("Visualization Pipelines"),
                 html.P(["Mix and match methods for data representation/embedding, clustering, and "
-                        "dimensionality reduction. Visualize the results with Temporal and State Space plot types"]),
+                        "dimensionality reduction."
+                        "Create new pipeline to calculate and Load Pipeline to evaluate and visualise."]),
             ]),
 
             # Main
@@ -59,20 +79,15 @@ def layout():
                 # Right Sidebar - Evaluation and Visualization
                 dbc.Col([
                     dbc.Row([
-                        # Evaluation Section
                         html.H5("Evaluation Metrics"),
-                        dbc.Row([
-                            html.P("F1 Score:"),
-                            html.Div(id='f1-score'),
-                            html.P("Accuracy Score:"),
-                            html.Div(id='prediction-score'),
-                            html.P("Explained Variance:"),
-                            html.Div(id='explained-variance'),
-                            html.P("Silhouette Score:"),
-                            html.Div(id='silhouette-score'),
-                            html.P("Davies-Bouldin Index:"),
-                            html.Div(id='davies-bouldin-index'),
-                        ], class_name='evaluation-metrics'),
+                        dash_table.DataTable(
+                            id='evaluation-table',
+                            columns=columns,
+                            data=data,
+                            merge_duplicate_headers=True,  # This will merge headers like 'birdnet' in one line
+                            style_table={'overflowX': 'auto'},
+                            style_cell={'textAlign': 'center'}
+                        ),
                     ], class_name='my-4'),
 
                     dbc.Row([
