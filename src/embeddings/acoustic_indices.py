@@ -55,13 +55,10 @@ class AcousticIndices(BaseEmbedding):
     compute_spectral_features(audio_file: str, sampling_rate: int = 48000, **kwargs) -> pd.DataFrame:
         Computes all spectral features for a single audio file using the `maad.features.all_spectral_features` method.
     """
-    def __init__(self, dataset_name: str, sampling_rate: int = 48000, clip_duration: float = 3.0,
+    def __init__(self, sampling_rate: int = 48000, clip_duration: float = 3.0,
                  model_path=None,
                  dask_client: dask.distributed.client.Client = None, **kwargs):
-        super().__init__(model_path, dask_client)
-        self.dataset_name = dataset_name
-        self.clip_duration = clip_duration
-        self.sampling_rate = sampling_rate
+        super().__init__(clip_duration, model_path, sampling_rate, dask_client)
 
     def load_model(self):
         """
@@ -70,15 +67,8 @@ class AcousticIndices(BaseEmbedding):
         pass  # No model loading required for this class.
 
     def process(self):
-        """
-        Processes the dataset by reading the audio files and computing the acoustic indices.
 
-        :param dataset_name: Name of the dataset to process.
-        :param sampling_rate: Sampling rate for the audio files (default is 48,000).
-        :param kwargs: Additional keyword arguments for feature computation (e.g., 'nperseg', 'roi', 'method').
-        :return: A pandas DataFrame containing computed acoustic features for each audio file.
-        """
-        self.data = self.read_audio_dataset(self.dataset_name, self.sampling_rate, chunk_duration=self.clip_duration)
+        self.data = self.read_audio_dataset()
         all_features = []
         for row in self.data.iterrows():
 
@@ -89,4 +79,5 @@ class AcousticIndices(BaseEmbedding):
             all_features.append(all_indices)
 
         self.embeddings = pd.concat(all_features, axis=0).set_index(self.data.index)
-        return self.embeddings
+        self.save_embeddings('acoustic_indices', self.embeddings)
+        return
