@@ -51,8 +51,8 @@ def layout():
                         # html.H5('Build pipeline'),
                         dbc.ButtonGroup([
                             #dbc.Button("Quickstart", id="quickstart-pipeline", n_clicks=0),
-                            dbc.Button("Load Pipeline", id="load-pipeline", n_clicks=0),
                             dbc.Button("New Pipeline", id="new-pipeline", n_clicks=0),
+                            dbc.Button("Load Pipeline", id="load-pipeline", n_clicks=0)
                         ], vertical=True),
                     ], class_name='my-4')
                 ], width=2),
