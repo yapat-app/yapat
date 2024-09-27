@@ -10,10 +10,12 @@ import librosa
 import numpy as np
 import pandas as pd
 from sqlalchemy import create_engine, select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
+from src import sqlalchemy_db, server
 
-from extensions import sqlalchemy_db
-from schema_model import Dataset, EmbeddingMethod
+#from extensions import sqlalchemy_db
+from schema_model import Dataset, EmbeddingMethod, EmbeddingResult
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +103,6 @@ class BaseEmbedding:
 
     def __init__(
             self,
-            dataset_name: str,
             clip_duration: float = 3.0,
             model_path: str or pathlib.Path or None = None,
             sampling_rate: int or None = None,
@@ -118,7 +119,6 @@ class BaseEmbedding:
         """
 
         # Input args
-        self.dataset_name = dataset_name
         self.model_path = model_path
         self.sampling_rate = sampling_rate
         self.clip_duration = clip_duration
@@ -139,29 +139,26 @@ class BaseEmbedding:
         else:
             pass
 
-    def process(self, audio_files):
+    def process(self):
         """
         Placeholder method for processing audio files. This should be implemented by subclasses.
         """
         raise NotImplementedError("This method should be implemented by subclasses")
 
-    def get_path_dataset(self, url_db: str or None = None):
-
-        # Create a new DB session for the task
-        url_db = url_db or 'sqlite:///src/instance/pipeline_data.db'
-        engine = create_engine(url_db)
-        Session = sessionmaker(bind=engine)
-        session = Session()
-
-        # Fetch the path to the dataset from the database within this session
-        path_dataset = session.execute(
-            select(Dataset.path_audio).where(Dataset.dataset_name == self.dataset_name)
-        ).scalar_one()
-
-        # Close the session after the task is done
-        session.close()
-
-        return path_dataset
+    def get_path_dataset(self):
+        session = sqlalchemy_db.session
+        try:
+            with server.app_context():
+                selected_dataset = session.query(Dataset).filter_by(is_selected=True).first()
+                if not selected_dataset:
+                    # implement handling
+                    logger.warning("No dataset is currently selected")
+                    return None
+                return selected_dataset.path_audio
+        except SQLAlchemyError as e:
+            # Handle and log database errors
+            logger.error(f"Error fetching selected dataset from the database: {e}")
+            return None
 
     def read_audio_dataset(self) -> pd.DataFrame:
         """
@@ -169,7 +166,6 @@ class BaseEmbedding:
 
                 :return: A pandas DataFrame containing audio file paths and any other relevant metadata.
                 """
-
         self.path_dataset = self.get_path_dataset()
         extensions = ['wav', 'aac', 'm4a', 'flac', 'mp3']
         extensions += [ext.upper() for ext in extensions]
@@ -199,6 +195,54 @@ class BaseEmbedding:
 
         # Return the concatenated DataFrame of processed audio files.
         return self.data
+
+    def save_embeddings(self, embedding_method_name:str, embeddings):
+        if embeddings is None:
+            logger.warning("No embeddings available to save")
+            return
+        try:
+            with server.app_context():
+                # It should be handled if the dataset is changed while the emebedding are calculated
+                selected_dataset = sqlalchemy_db.session.query(Dataset).filter_by(is_selected=True).first()
+                if not selected_dataset:
+                    logger.warning("No dataset is currently selected. Cannot save embeddings.")
+                embedding_method = sqlalchemy_db.session.query(EmbeddingMethod).filter_by(
+                    method_name=embedding_method_name).first()
+                if not embedding_method:
+                    logger.error(f"Embedding method '{embedding_method_name}' not found in the database.")
+                    return
+                os.makedirs('results', exist_ok=True)
+                embedding_file_path = os.path.join('results',
+                                           f"{selected_dataset.dataset_name}_{embedding_method_name}_embeddings.pkl")
+                embeddings.to_pickle(embedding_file_path)
+                self._save_embedding_metadata_to_db(
+                    dataset_id=selected_dataset.id,
+                    embedding_id=embedding_method.id,
+                    file_path=embedding_file_path
+                )
+        except Exception as e:
+            logger.error(f"Error saving embeddings: {e}")
+            return
+
+    def _save_embedding_metadata_to_db(self, dataset_id: int, embedding_id: int, file_path: str) -> None:
+
+        try:
+            # Add metadata to the EmbeddingResult table
+            embedding_result = EmbeddingResult(
+                dataset_id=dataset_id,
+                embedding_id=embedding_id,
+                file_path=file_path,
+                hyperparameters={},  # Optionally add hyperparameters here
+                evaluation_results={},  # Optionally add evaluation results here
+                created_at=pd.Timestamp.now()  # Record the time of embedding creation
+            )
+            sqlalchemy_db.session.add(embedding_result)
+            sqlalchemy_db.session.commit()
+            logger.info(f"Embedding metadata saved to the database for dataset {dataset_id}")
+
+        except SQLAlchemyError as e:
+            sqlalchemy_db.session.rollback()
+            logger.error(f"Error saving embedding metadata to the database: {e}")
 
 
 def compute_embeddings(dataset_name: str, embedding_method: str, flask_server):
