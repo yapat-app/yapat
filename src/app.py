@@ -128,5 +128,3 @@ if __name__ == "__main__":
         debug=APP_DEBUG,
         dev_tools_props_check=DEV_TOOLS_PROPS_CHECK
     )
-
-
