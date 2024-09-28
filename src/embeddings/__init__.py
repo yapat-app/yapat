@@ -143,7 +143,7 @@ class BaseEmbedding:
     def get_path_dataset(self, url_db: Optional[str] = None):
 
         # Create a new DB session for the task
-        url_db = url_db or 'sqlite:///src/instance/pipeline_data.db'
+        url_db = url_db or 'sqlite:///instance/pipeline_data.db'
         engine = create_engine(url_db)
         Session = sessionmaker(bind=engine)
         session = Session()
