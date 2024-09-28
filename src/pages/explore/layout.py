@@ -62,7 +62,8 @@ def layout():
                     ], class_name='my-4', id='pipeline-summary'),
                     dbc.Row([
                         # dbc.DropdownMenu()
-                    ], class_name='my-4')
+                    ], class_name='my-4'),
+                    html.P(id="create-pipeline-msg"),
                 ])
             ]),
 

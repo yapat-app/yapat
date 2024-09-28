@@ -2,9 +2,7 @@ import glob
 import os
 
 from utils.extensions import check_socket
-
-
-# from utils.embeddings import get_embedding_model
+from utils.utils import get_embedding_model
 
 
 def glob_audio_dataset(path_dataset):

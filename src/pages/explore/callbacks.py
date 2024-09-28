@@ -2,8 +2,9 @@ import os
 
 from dash import Input, Output, State, callback, callback_context
 
+from extensions import sqlalchemy_db
 from schema_model import ClusteringMethod, EmbeddingMethod, DimReductionMethod, Dataset
-from src import sqlalchemy_db
+from utils.task_manager import compute_embeddings
 
 pipeline_steps = {
     'embeddings': EmbeddingMethod,
@@ -71,3 +72,20 @@ def display_pipeline_summary(m_e, m_c, m_dv):
     msg = f"{n_pipelines} pipelines will be computed"
     if n_pipelines == 1: msg = msg.replace("pipelines", "pipeline")
     return msg
+
+
+@callback(
+    Output("create-pipeline-msg", "children"),
+    Input("create-pipeline", "n_clicks"),
+    State("project-content", "data"),
+    State("methods-embedding", "value"),
+    prevent_initial_call=True
+)
+def process_pipeline_create_click(n_clicks, project_content, list_embedding_methods):
+    dataset_name = project_content.get("project_name")
+    list_embedding_methods = list_embedding_methods if isinstance(list_embedding_methods, list) else [
+        list_embedding_methods]
+    if callback_context.triggered_id == "create-pipeline":
+        compute_embeddings(dataset_name=dataset_name, list_embedding_methods=list_embedding_methods)
+
+    return f"Created {n_clicks} pipelines"

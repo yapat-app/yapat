@@ -1,0 +1,1 @@
+from utils.task_manager.blocking import compute_embeddings
