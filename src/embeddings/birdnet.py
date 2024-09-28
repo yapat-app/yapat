@@ -40,7 +40,7 @@ class BirdnetEmbedding(BaseEmbedding):
             clip_duration: float = 3.0,
             model_path: Optional[Union[str, pathlib.Path]] = os.path.join('assets', 'models', 'birdnet', 'V2.4',
                                                                           'BirdNET_GLOBAL_6K_V2.4_Model'),
-            sampling_rate: Optional[int] = None,
+            sampling_rate: Optional[int] = 48000,
     ):
         super().__init__(dataset_name, clip_duration, model_path, sampling_rate)
 

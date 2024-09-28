@@ -1,3 +1,5 @@
+import datetime
+import logging
 import os
 import pathlib
 from multiprocessing import Pool
@@ -9,6 +11,9 @@ import tensorflow as tf
 
 from assets.models.vae_xprize import VAE
 from embeddings import BaseEmbedding
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class VAEEmbedding(BaseEmbedding):
@@ -63,6 +68,9 @@ class VAEEmbedding(BaseEmbedding):
             "freq_max": 22050,
             "n_freqs": 400
         }
+        if self.kw_spectrograms.get("freq_max") > self.sampling_rate // 2:
+            logger.warning(
+                f"Spectrogram includes bands above the Nyquist frequency. freq_max: {self.kw_spectrograms.get('freq_max')}, sampling_rate: {self.sampling_rate}")
 
         self.model = None
         self.spectrograms = None
