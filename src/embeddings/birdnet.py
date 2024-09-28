@@ -39,7 +39,7 @@ class BirdnetEmbedding(BaseEmbedding):
             self,
             dataset_name: str,
             clip_duration: float = 3.0,
-            model_path: Optional[Union[str, pathlib.Path]] = os.path.join('..', 'assets', 'models', 'birdnet', 'V2.4',
+            model_path: Optional[Union[str, pathlib.Path]] = os.path.join('src', 'assets', 'models', 'birdnet', 'V2.4',
                                                                           'BirdNET_GLOBAL_6K_V2.4_Model'),
             sampling_rate: Optional[int] = None,
     ):
@@ -66,6 +66,8 @@ class BirdnetEmbedding(BaseEmbedding):
         self.data = self.read_audio_dataset()
         self.load_model()
         results = []
+        if self.sampling_rate != 48000:
+            raise ValueError(f"Birdnet expects 48kHz sampling rate; got {self.sampling_rate}")
         for row in self.data.iterrows():
             audio_data = np.expand_dims(row[1].audio_data, axis=0)
             embedding = self.model(audio_data)
