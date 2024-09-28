@@ -66,9 +66,8 @@ class AcousticIndices(BaseEmbedding):
             clip_duration: float = 3.0,
             model_path: Optional[Union[str, pathlib.Path]] = None,
             sampling_rate: Optional[int] = None,
-            dask_client: Optional[Union[Client, str]] = None
     ):
-        super().__init__(dataset_name, clip_duration, model_path, sampling_rate, dask_client)
+        super().__init__(dataset_name, clip_duration, model_path, sampling_rate)
 
     def load_model(self):
         """

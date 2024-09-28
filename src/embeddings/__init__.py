@@ -1,4 +1,3 @@
-import glob
 import logging
 import os
 import pathlib
@@ -7,13 +6,12 @@ from typing import Optional, Union
 import librosa
 import numpy as np
 import pandas as pd
-from dask.distributed import Client, get_worker
 from sqlalchemy import create_engine
-from sqlalchemy import select, and_
+from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import sessionmaker
 
-from schema_model import Dataset, EmbeddingMethod, EmbeddingResult
+from schema_model import Dataset
 from utils import glob_audio_dataset
 
 logger = logging.getLogger(__name__)
@@ -67,26 +65,37 @@ def _split_audio_into_chunks(filename: str, chunk_duration: float, sampling_rate
 
 class BaseEmbedding:
     """
-    Base class for embedding models used to generate embeddings from audio data.
+        Base class for embedding models used to generate embeddings from audio data.
 
-    Attributes:
-    -----------
-    dataset_name : pd.DataFrame or None
-        DataFrame holding the processed audio data (e.g., file paths, audio features).
-    dask_client : dask.distributed.Client or None
-        Optional Dask client for handling distributed task execution.
-    embeddings : pd.DataFrame or None
-        DataFrame containing the generated embeddings for the audio dataset.
+        This class provides core functionality for embedding models, including loading the model,
+        reading and processing audio datasets, and optionally using Dask for distributed processing.
+        It is meant to be subclassed by specific embedding models, which should implement their own
+        model loading and processing logic.
 
-    Methods:
-    --------
-    load_model():
-        Abstract method for loading the model. Must be implemented by subclasses.
-    process(audio_files):
-        Abstract method for processing audio files to generate embeddings. Must be implemented by subclasses.
-    read_audio_dataset() -> pd.DataFrame:
-        Reads and processes an audio dataset, optionally using Dask for parallel processing.
-    """
+        Attributes:
+        -----------
+        dataset_name : pd.DataFrame or None
+            DataFrame holding the processed audio data (e.g., file paths, audio features).
+        embeddings : pd.DataFrame or None
+            DataFrame containing the generated embeddings for the audio dataset.
+
+        Methods:
+        --------
+        load_model():
+            Abstract method for loading the model. Must be implemented by subclasses.
+            :raises NotImplementedError: This method must be implemented by subclasses for model loading.
+
+
+        process(audio_files):
+            Abstract method for processing audio files to generate embeddings. Must be implemented by subclasses.
+            :raises NotImplementedError: This method must be implemented by subclasses for model loading.
+
+
+        read_audio_dataset() -> pd.DataFrame:
+            Reads and processes an audio dataset, optionally using Dask for parallel processing.
+            Returns a pandas DataFrame containing the audio file paths and other metadata.
+            :return: A pandas DataFrame indexed by 'filename' and a data column 'audio_data' containing processed audio chunks.
+        """
 
     def __init__(
             self,
@@ -94,7 +103,6 @@ class BaseEmbedding:
             clip_duration: float = 3.0,
             model_path: Optional[Union[str, pathlib.Path]] = None,
             sampling_rate: Optional[int] = None,
-            dask_client: Optional[Union[Client, str]] = None
     ) -> None:
         """
         Initialize the BaseEmbedding class with the model path and an optional Dask client.
@@ -103,7 +111,6 @@ class BaseEmbedding:
         :param clip_duration: Audio files are chunked in clips of duration specified in seconds.
         :param model_path: Path of pre-saved model (if any).
         :param sampling_rate: Sample rate used by `librosa.load`. If None, native sampling rate will be used.
-        :param dask_client: Optional Dask client for handling distributed task execution, or address of the Dask scheduler.
         """
 
         # Input args
@@ -112,43 +119,36 @@ class BaseEmbedding:
         self.sampling_rate = sampling_rate
         self.clip_duration = clip_duration
 
-        # Store dask_client if provided
-        self.dask_client = self._initialize_dask_client(dask_client)
-
         # Placeholders
         self.data = pd.DataFrame()  # Initialize as empty DataFrame
         self.embeddings = pd.DataFrame()  # Initialize as empty DataFrame
         self.list_of_audio_files = []
         self.path_dataset = None
 
-    def _initialize_dask_client(self, dask_client: Optional[Union[Client, str]]) -> Optional[Client]:
-        """Initialize the Dask client based on the provided input."""
-        if dask_client is None:
-            return None
-        try:
-            return get_worker().client
-        except ValueError:
-            logger.debug('Not a worker')
-        if isinstance(dask_client, str):
-            return Client(dask_client)  # Create a Client from the address
-        elif isinstance(dask_client, Client):
-            return dask_client  # Use the provided Client instance
-        return None  # Default to None if no valid input
-
     def load_model(self):
-        """Abstract method for loading the model. Must be implemented by subclasses."""
-        raise NotImplementedError("Subclasses should implement this method.")
+        """
+        Placeholder method for loading the model. This should be implemented by subclasses if needed.
+        """
+        if self.model_path:
+            raise NotImplementedError("Subclasses should implement this method if a model path is provided.")
+        else:
+            pass
 
-    def process(self, audio_files):
-        """Abstract method for processing audio files. Must be implemented by subclasses."""
+    def process(self):
+        """
+        Placeholder method for processing audio files. This should be implemented by subclasses.
+        """
         raise NotImplementedError("This method should be implemented by subclasses")
 
     def get_path_dataset(self, url_db: Optional[str] = None):
+
+        # Create a new DB session for the task
         url_db = url_db or 'sqlite:///src/instance/pipeline_data.db'
         engine = create_engine(url_db)
         Session = sessionmaker(bind=engine)
         session = Session()
 
+        # Fetch the path to the dataset from the database within this session
         try:
             path_dataset = session.execute(
                 select(Dataset.path_audio).where(Dataset.dataset_name == self.dataset_name)
@@ -156,6 +156,7 @@ class BaseEmbedding:
         except NoResultFound:
             raise ValueError(f"No dataset found for name: {self.dataset_name}")
         finally:
+            # Close the session after the task is done
             session.close()
 
         return path_dataset
@@ -164,8 +165,9 @@ class BaseEmbedding:
         """
         Read the dataset of audio files and process it using Dask for parallelization if available.
 
-        :return: A pandas DataFrame containing audio file paths and any other relevant metadata.
-        """
+                :return: A pandas DataFrame containing audio file paths and any other relevant metadata.
+                """
+
         self.path_dataset = self.get_path_dataset()
         self.list_of_audio_files = glob_audio_dataset(path_dataset=self.path_dataset)
 

@@ -42,9 +42,8 @@ class BirdnetEmbedding(BaseEmbedding):
             model_path: Optional[Union[str, pathlib.Path]] = os.path.join('..', 'assets', 'models', 'birdnet', 'V2.4',
                                                                           'BirdNET_GLOBAL_6K_V2.4_Model'),
             sampling_rate: Optional[int] = None,
-            dask_client: Optional[Union[Client, str]] = None
     ):
-        super().__init__(dataset_name, clip_duration, model_path, sampling_rate, dask_client)
+        super().__init__(dataset_name, clip_duration, model_path, sampling_rate)
 
     def load_model(self):
         """

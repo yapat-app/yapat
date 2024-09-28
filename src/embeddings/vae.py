@@ -24,8 +24,6 @@ class VAEEmbedding(BaseEmbedding):
     -----------
     model_path : str
         Path where the VAE model will be saved or loaded.
-    dask_client : dask.distributed.client.Client or None
-        Optional Dask client for handling distributed task execution.
     data : pd.DataFrame or None
         DataFrame holding the computed spectrograms.
     vae : tensorflow.keras.Model
@@ -47,7 +45,6 @@ class VAEEmbedding(BaseEmbedding):
             clip_duration: float = 3.0,
             model_path: str or pathlib.Path or None = None,
             sampling_rate: int or None = None,
-            dask_client: dask.distributed.client.Client or None = None,
             learning_rate=0.05,
             batch_size=16,
             epochs=10,
@@ -55,7 +52,7 @@ class VAEEmbedding(BaseEmbedding):
             beta_kl=1,
             kw_spectrograms: dict or None = None
     ):
-        super().__init__(dataset_name, clip_duration, model_path, sampling_rate, dask_client)
+        super().__init__(dataset_name, clip_duration, model_path, sampling_rate)
         self.learning_rate = learning_rate
         self.epochs = epochs
         self.batch_size = batch_size
@@ -78,37 +75,16 @@ class VAEEmbedding(BaseEmbedding):
     def compute_spectrograms(self):
         if self.data.empty:
             self.read_audio_dataset()
-        # If a Dask client is provided, parallelize the audio chunking process using Dask.
-        if self.dask_client is not None:
-            # Use Dask to map audio files to chunking tasks and gather the results.
-
-            n_fft = int(self.kw_spectrograms.get('resolution') * self.sampling_rate)
-            hop_length = int(n_fft * (1 - self.kw_spectrograms.get('overlap')))
-
-            task_spectrograms = self.dask_client.map(
+        with Pool() as pool:
+            # Use multiprocessing to process audio files in parallel
+            spectrograms = pool.starmap(
                 _compute_spectrogram,
-                self.data['audio_data'],
-                [self.sampling_rate] * len(self.list_of_audio_files),
-                [self.kw_spectrograms.get('resolution')] * len(self.list_of_audio_files),
-                [self.kw_spectrograms.get('overlap')] * len(self.list_of_audio_files),
-                [self.kw_spectrograms.get('freq_min')] * len(self.list_of_audio_files),
-                [self.kw_spectrograms.get('freq_max')] * len(self.list_of_audio_files),
-                [self.kw_spectrograms.get('n_freqs')] * len(self.list_of_audio_files),
+                [(audio_data, self.sampling_rate, self.kw_spectrograms.get('resolution'),
+                  self.kw_spectrograms.get('overlap'), self.kw_spectrograms.get('freq_min'),
+                  self.kw_spectrograms.get('freq_max'), self.kw_spectrograms.get('n_freqs')) for audio_data in
+                 self.data['audio_data']]
             )
-            self.spectrograms = self.dask_client.gather(task_spectrograms)  # Concatenate the results.
-        else:
-            # If no Dask client is provided, process the audio files locally.
-            # TODO Use tensorflow, or at least ensure it scales beyond memory capacity
-            with Pool() as pool:
-                # Use multiprocessing to process audio files in parallel
-                spectrograms = pool.starmap(
-                    _compute_spectrogram,
-                    [(audio_data, self.sampling_rate, self.kw_spectrograms.get('resolution'),
-                      self.kw_spectrograms.get('overlap'), self.kw_spectrograms.get('freq_min'),
-                      self.kw_spectrograms.get('freq_max'), self.kw_spectrograms.get('n_freqs')) for audio_data in
-                     self.data['audio_data']]
-                )
-            self.spectrograms = spectrograms
+        self.spectrograms = spectrograms
 
     def load_model(self):
         input_shape = (self.kw_spectrograms.get('n_freqs'), int(1 + self.clip_duration / (
