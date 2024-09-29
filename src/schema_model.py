@@ -63,7 +63,7 @@ class ClusteringMethod(sqlalchemy_db.Model):
     __tablename__ = 'clustering'
     __bind_key__ = "pipeline_db"
 
-    method_id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
     method_name = Column(String(255), unique=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -73,15 +73,17 @@ class ClusteringResult(sqlalchemy_db.Model):
     __tablename__ = 'clustering_results'
     __bind_key__ = "pipeline_db"
 
-    result_id = Column(Integer, primary_key=True)
-    embedding_id = Column(Integer, ForeignKey('embedding_results.id'),
+    id = Column(Integer, primary_key=True)
+    embedding_result_id = Column(Integer, ForeignKey('embedding_results.id'),
                           nullable=False)
-    method_id = Column(Integer, ForeignKey('clustering.method_id'),
+    method_id = Column(Integer, ForeignKey('clustering.id'),
                        nullable=False)
-    cluster_file_path = Column(String(255),
-                               nullable=False)  # Store path to the clustering result file
+    file_path = Column(String(255), unique=True)  # Store path to the clustering file
     hyperparameters = Column(JSON, nullable=True)  # Clustering hyperparameters stored as JSON
     evaluation_results = Column(JSON, nullable=True)
+    task_state = Column(String(64), nullable=False)
+    task_key = Column(String(64), unique=True)
+    last_changed = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -106,7 +108,7 @@ class DimReductionResult(sqlalchemy_db.Model):
 
     result_id = Column(Integer, primary_key=True)
     clustering_result_id = Column(Integer,
-                                  ForeignKey('clustering_results.result_id'), nullable=False)
+                                  ForeignKey('clustering_results.id'), nullable=False)
     method_id = Column(Integer, ForeignKey('dimensionality_reduction.method_id'),
                        nullable=False)
     reduction_file_path = Column(String(255),
