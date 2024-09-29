@@ -8,36 +8,11 @@ from embeddings import BaseEmbedding
 
 # BirdNet embedding class that inherits from BaseEmbedding and provides specific implementation for BirdNet.
 class BirdnetEmbedding(BaseEmbedding):
-    """
-    BirdNet embedding model class for generating embeddings from audio data using the BirdNET model.
 
-    This class extends the BaseEmbedding class and provides the specific implementation for loading
-    the BirdNet model and processing audio datasets. BirdNet is used for analyzing and extracting
-    features from audio clips, often for tasks such as species identification from bird calls.
-
-    Inherited Attributes:
-    ---------------------
-    model_path : str
-        Path to the pre-trained model used for generating embeddings.
-    dask_client : dask.distributed.client.Client or None
-        Optional Dask client for handling distributed task execution.
-
-    Methods:
-    --------
-    load_model():
-        Loads the BirdNet-specific model using TensorFlow.
-
-    process(dataset_name: str, extension: str = '.wav', sampling_rate: int = 48000):
-        Processes the audio dataset to generate embeddings using the BirdNet model.
-    """
-
-    def __init__(self, dataset_name: str, clip_duration: float = 3.0, sampling_rate: int = 48000,
-                 model_path='../assets/models/birdnet/V2.4/BirdNET_GLOBAL_6K_V2.4_Model',
+    def __init__(self, clip_duration: float = 3.0, sampling_rate: int = 48000,
+                 model_path='assets/models/birdnet/V2.4/BirdNET_GLOBAL_6K_V2.4_Model',
                  dask_client: dask.distributed.client.Client = None):
-        super().__init__(model_path, dask_client)
-        self.dataset_name = dataset_name
-        self.clip_duration = clip_duration
-        self.sampling_rate = sampling_rate
+        super().__init__(clip_duration, model_path, sampling_rate, dask_client)
         self.model = None
 
     def load_model(self):
@@ -51,14 +26,8 @@ class BirdnetEmbedding(BaseEmbedding):
         self.model = tf.keras.Model(inputs=input_layer, outputs=tfsm_layer)
 
     def process(self):
-        """
-        Process the dataset using the BirdNet model to generate embeddings.
 
-        :param dataset_name: Name of the dataset to process.
-        :param sampling_rate: The sampling rate for the audio files (default is 48,000).
-        :return: A pandas DataFrame containing the generated embeddings.
-        """
-        self.data = self.read_audio_dataset(self.dataset_name, self.sampling_rate, chunk_duration=self.clip_duration)
+        self.data = self.read_audio_dataset()
         self.load_model()
         results = []
         for row in self.data.iterrows():
@@ -68,4 +37,9 @@ class BirdnetEmbedding(BaseEmbedding):
             results.append(embedding_array.tolist())
 
         self.embeddings = pd.DataFrame(results, index=self.data.index, columns=[f'embedding_{i}' for i in range(1024)])
-        return self.embeddings
+        self.save_embeddings('birdnet', self.embeddings)
+        return
+
+if __name__ == '__main__':
+    embedding = BirdnetEmbedding()
+    embedding.process()
