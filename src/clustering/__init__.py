@@ -1,13 +1,12 @@
-import dask
 import os
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
 import uuid
 
+import pandas as pd
+from sklearn.preprocessing import RobustScaler
 from sqlalchemy import and_
 
 from extensions import sqlalchemy_db
-from schema_model import Dataset, EmbeddingMethod, EmbeddingResult, ClusteringResult
+from schema_model import Dataset, EmbeddingMethod, EmbeddingResult
 
 
 class BaseClustering:
@@ -75,7 +74,7 @@ class BaseClustering:
         return self.data
 
     def scale_data(self, data):
-        scaler = StandardScaler()
+        scaler = RobustScaler()
         scaled_data = scaler.fit_transform(data.values)
         return scaled_data
 
@@ -93,7 +92,6 @@ class BaseClustering:
         file_path = os.path.join('results/', unique_filename)
         self.labels.to_pickle(file_path)
         # SQL QUERY TO SAVE RESULT
-
 
 
 def get_clustering_model(method_name: str, *args, **kwargs):
