@@ -26,7 +26,6 @@ class KMeansClustering(BaseClustering):
         data = self.load_data(embedding_method_name)
         self.scaled_data = self.scale_data(data)
         self.clusterer.fit(self.scaled_data)
-        print(self.clusterer.inertia_)  # Check for the sum of squared distances to the cluster centers
         self.labels = pd.DataFrame(self.clusterer.labels_, columns=['Cluster Label'], index=data.index)
         self.save_labels('kmeans', embedding_method_name, self.labels)
         return

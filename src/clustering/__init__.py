@@ -131,7 +131,8 @@ class BaseClustering:
                         method_id=clustering_method.method_id,
                         cluster_file_path=clustering_file_path,
                         hyperparameters={},  # Add relevant hyperparameters if any
-                        evaluation_results={},  # Add evaluation results if any
+                        evaluation_results={},
+                        task = 'completed'
                     )
                     session.add(clustering_result)
                 else:
