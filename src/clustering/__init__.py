@@ -34,12 +34,16 @@ class BaseClustering:
 
     """
 
-    def __init__(self, dataset_name, embedding_method) -> None:
+    def __init__(self, dataset_name: str = None, embedding_method: str = None, dataset_id: int = None,
+                 embedding_id: int = None, embeddings: pd.DataFrame = None) -> None:
         """
         Initialize the BaseClustering class. Sets up the data and labels attributes.
         """
         self.dataset_name = dataset_name
         self.embedding_method = embedding_method
+        self.dataset_id = dataset_id
+        self.embedding_id = embedding_id
+        self.embeddings = embeddings if embeddings is not None else pd.DataFrame()
         self.data = None  # Will hold the data to be clustered.
         self.labels = None  # Will store the cluster labels after fitting the model.
 
@@ -64,7 +68,6 @@ class BaseClustering:
                                                                        EmbeddingResult.embedding_id == self.embedding_id))
         )
 
-        file_path = '/Users/ridasaghir/Desktop/exp/anura/anura_encodings.pkl'
         if file_path.endswith('.csv'):
             self.data = pd.read_csv(file_path, index_col=0)
         elif file_path.endswith('.pkl'):
@@ -92,6 +95,21 @@ class BaseClustering:
         file_path = os.path.join('results/', unique_filename)
         self.labels.to_pickle(file_path)
         # SQL QUERY TO SAVE RESULT
+
+    def fit_predict(self):
+        """
+        :param self.embeddings: DataFrame containing the data to be clustered.
+        :return: DataFrame containing the cluster labels assigned to the data.
+        """
+        if self.embeddings.empty:
+            raise NotImplementedError(
+                "As of now, embeddings need to be pre-computed and passed when instantiating the clustering model.")
+            # data = self.load_data()
+        self.scaled_data = self.scale_data(self.embeddings)
+        self.clusterer.fit(self.scaled_data)
+        self.labels = pd.DataFrame(self.clusterer.labels_, columns=['Cluster Label'], index=self.embeddings.index)
+        # self.save_labels(self.labels)
+        return self.labels
 
 
 def get_clustering_model(method_name: str, *args, **kwargs):

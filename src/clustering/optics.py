@@ -13,12 +13,14 @@ class OpticsClustering(BaseClustering):
 
     """
 
-    def __init__(self, dataset_name, embedding_method):
+    def __init__(self, dataset_name: str = None, embedding_method: str = None, dataset_id: int = None,
+                 embedding_id: int = None, embeddings: pd.DataFrame = None):
         """
         Initialize the OpticsClustering class with the minimum cluster size.
 
         """
-        super().__init__(dataset_name, embedding_method)
+        super().__init__(dataset_name=dataset_name, embedding_method=embedding_method, dataset_id=dataset_id,
+                         embedding_id=embedding_id, embeddings=embeddings)
         self.clusterer = OPTICS() # min_samples default = 5
 
     def fit(self):
