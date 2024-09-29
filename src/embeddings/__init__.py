@@ -206,11 +206,23 @@ class BaseEmbedding:
                 selected_dataset = sqlalchemy_db.session.query(Dataset).filter_by(is_selected=True).first()
                 if not selected_dataset:
                     logger.warning("No dataset is currently selected. Cannot save embeddings.")
+                    return
                 embedding_method = sqlalchemy_db.session.query(EmbeddingMethod).filter_by(
                     method_name=embedding_method_name).first()
                 if not embedding_method:
                     logger.error(f"Embedding method '{embedding_method_name}' not found in the database.")
                     return
+
+                existing_entry = sqlalchemy_db.session.query(EmbeddingResult).filter_by(
+                    dataset_id=selected_dataset.id,
+                    embedding_id=embedding_method.id
+                ).first()
+
+                if existing_entry:
+                    logger.warning(
+                        f"Embeddings for dataset ID {selected_dataset.id} and embedding method ID {embedding_method.id} already exist. Skipping save.")
+                    return
+
                 os.makedirs('results', exist_ok=True)
                 embedding_file_path = os.path.join('results',
                                            f"{selected_dataset.dataset_name}_{embedding_method_name}_embeddings.pkl")
@@ -234,7 +246,8 @@ class BaseEmbedding:
                 file_path=file_path,
                 hyperparameters={},  # Optionally add hyperparameters here
                 evaluation_results={},  # Optionally add evaluation results here
-                created_at=pd.Timestamp.now()  # Record the time of embedding creation
+                created_at=pd.Timestamp.now(),
+                task='completed'
             )
             sqlalchemy_db.session.add(embedding_result)
             sqlalchemy_db.session.commit()
