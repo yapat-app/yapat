@@ -59,9 +59,10 @@ def update_database_embedding_result(
 def compute_embeddings(dataset_name, list_embedding_methods):
     logger.info(f"Computing embeddings for dataset '{dataset_name}'")
     for embedding_method in list_embedding_methods:
+        sampling_rate = 22000 if embedding_method == 'acoustic_indices' else None
         logger.info(f"Computing embeddings for method '{embedding_method}'")
         embedder_instance = get_embedding_model(method_name=embedding_method, dataset_name=dataset_name,
-                                                sampling_rate=22050)
+                                                sampling_rate=sampling_rate)
         embedder_instance.process()
         filepath = os.path.join('instance', 'embeddings', f'{dataset_name}_{embedding_method}_{uuid.uuid4()}.pkl')
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
