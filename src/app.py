@@ -13,8 +13,8 @@ from components import navbar, footer
 from components.login import login_location
 from pages.explore.callbacks import update_db_methods
 from schema_model import User
-from src import login_manager, sqlalchemy_db, server
-from utils import check_socket
+from extensions import login_manager, sqlalchemy_db
+from utils import check_socket, server
 from utils.settings import APP_HOST, APP_PORT, APP_DEBUG, DEV_TOOLS_PROPS_CHECK
 
 logger = logging.getLogger(__name__)
@@ -124,6 +124,11 @@ if __name__ == "__main__":
 
     # Only initialize the Dash app if this script is the entry point
     app = create_app()
+
+    # Initialize extensions with the app
+    sqlalchemy_db.init_app(server)
+    login_manager.init_app(server)
+    login_manager.login_view = 'login'
 
     # Any additional initialization (such as database operations) should be kept in the main block
     with server.app_context():

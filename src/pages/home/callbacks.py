@@ -13,8 +13,8 @@ from dash import html, callback, Input, Output, State
 from pages.explore.callbacks import list_existing_datasets
 from pages.home import register_dataset
 from schema_model import Dataset
-from src import sqlalchemy_db, server
-from utils import glob_audio_dataset
+from extensions import sqlalchemy_db
+from utils import glob_audio_dataset, server
 
 logger = logging.getLogger(__name__)
 
