@@ -7,15 +7,15 @@ from visualizations import BaseVisualization
 
 class ClusterTemporalHist(BaseVisualization):
 
-    def __init__(self, result_id, average_based: str = 'hour'):
+    def __init__(self, embedding_method, clustering_method, dim_reduction_method, average_based: str = 'hour'):
 
         self.average_based = average_based
-        super().__init__(result_id)
+        super().__init__(embedding_method, clustering_method, dim_reduction_method)
 
 
 
     def plot(self):
-        _, cluster_labels = self.load_data()
+        _, cluster_labels, _ = self.load_data()
         # apply method doesn't work on index directly, therefore using Series
         date_time_series = pd.Series(cluster_labels.index).apply(self.parse_datetime_from_filename)
         cluster_labels['date'], cluster_labels['time'] = zip(*date_time_series)
@@ -35,7 +35,7 @@ class ClusterTemporalHist(BaseVisualization):
                       labels={self.average_based: self.average_based.capitalize(), 'Count': 'Occurrences',
                               'Cluster Label': 'Cluster'}, line_shape='spline')
         fig.update_layout(xaxis_title=self.average_based.capitalize(), yaxis_title='Occurrences')
-        fig.show()
+        return fig
 
 
 
