@@ -1,6 +1,7 @@
 import pandas as pd
 import json
 import logging
+import os
 import dask
 from sklearn.preprocessing import StandardScaler
 
@@ -38,10 +39,12 @@ class BaseEvaluation:
         scaled_data = scaler.fit_transform(data.values)
         return scaled_data
 
-    def extract_hour(self, filename):
+    def extract_hour(self, index):
+        filename = os.path.basename(index)
         return filename.split('_')[2][:2].split('.')[0]
 
-    def extract_location(self, filename):
+    def extract_location(self, index):
+        filename = os.path.basename(index)
         return filename.split('_')[0]
 
     def save_results(self, indicator_evaluation, evaluation_results):
