@@ -5,12 +5,12 @@ from visualizations import BaseVisualization
 
 class RosePlot(BaseVisualization):
 
-    def __init__(self, result_id):
+    def __init__(self, embedding_method, clustering_method, dim_reduction_method):
 
-        super().__init__(result_id)
+        super().__init__(embedding_method, clustering_method, dim_reduction_method)
 
     def plot(self):
-        _, cluster_labels = self.load_data()
+        _, cluster_labels, _ = self.load_data()
         # apply method doesn't work on index directly, therefore using Series
         date_time_series = pd.Series(cluster_labels.index).apply(self.parse_datetime_from_filename)
         cluster_labels['date'], cluster_labels['time'] = zip(*date_time_series)
@@ -31,5 +31,6 @@ class RosePlot(BaseVisualization):
             },
             title='Cluster Rose Plot'
         )
+        return fig
 
 
