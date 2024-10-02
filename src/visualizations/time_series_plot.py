@@ -7,8 +7,8 @@ from visualizations import BaseVisualization
 
 
 class TimeSeries(BaseVisualization):
-    def __init__(self, result_id, resolution='Minutes', x_axis='linear', y_variables=None):
-        super().__init__(result_id)
+    def __init__(self, embedding_method, clustering_method, dim_reduction_method, resolution='Minutes', x_axis='linear', y_variables=None):
+        super().__init__(embedding_method, clustering_method, dim_reduction_method)
         self.resolution = resolution  # Set the desired resolution (See create_numeric_time)
         self.x_axis = x_axis # Set the x-axis type ('year_cycle', 'diel_cycle', 'linear')
         self.y_variables = y_variables # A list of values to plot
@@ -31,7 +31,7 @@ class TimeSeries(BaseVisualization):
                 return df.index.month + df.index.day / 30 + df.index.hour / 720 + df.index.minute / 43200
 
     def plot(self):
-        embeddings, _ = self.load_data()
+        embeddings, _, _ = self.load_data()
         if self.y_variables is None:
             self.y_variables = embeddings.columns[:3]
         y_variables_str = ', '.join(self.y_variables)
@@ -58,5 +58,5 @@ class TimeSeries(BaseVisualization):
             fig.update_xaxes(tickmode='array', tickvals=tickvals, ticktext=ticktext)
 
         fig.update_layout(title=f'{y_variables_str} over Time with {self.resolution} resolution')
-        fig.show()
+        return fig
 
