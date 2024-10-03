@@ -4,6 +4,9 @@ import uuid
 import pandas as pd
 from sklearn.preprocessing import RobustScaler
 from sqlalchemy import and_
+from src import server, sqlalchemy_db
+from sqlalchemy.exc import SQLAlchemyError
+from schema_model import Dataset, EmbeddingResult, ClusteringResult, ClusteringMethod, EmbeddingMethod
 
 from extensions import sqlalchemy_db
 from schema_model import Dataset, EmbeddingMethod, EmbeddingResult
@@ -77,6 +80,7 @@ class BaseClustering:
         return self.data
 
     def scale_data(self, data):
+        data.dropna(axis=1, inplace=True)
         scaler = RobustScaler()
         scaled_data = scaler.fit_transform(data.values)
         return scaled_data

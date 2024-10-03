@@ -28,18 +28,11 @@ class TSNE(BaseDimensionalityReduction):
         self.n_components = n_components
         self.dim_reducer = tsne(n_components=self.n_components)
 
-    def fit_transform(self, dataset_id: int, embedding_id: int):
-        """
-        Fit the TSNE model to the dataset and transform the dataset.
-
-        :param data: DataFrame containing the data for dimensionality reduction.
-        :return: DataFrame with the reduced dimensions.
-        """
-        data = self.load_data(dataset_id, embedding_id)
+    def fit_transform(self, embedding_method_name):
+        data = self.load_data(embedding_method_name)
         self.scaled_data = self.scale_data(data)
         reduced_data = self.dim_reducer.fit_transform(self.scaled_data)
-        # Creating a DataFrame for the reduced data
         columns = [f'TSNE {i + 1}' for i in range(self.n_components)]
         self.transformed_data = pd.DataFrame(reduced_data, columns=columns, index=data.index)
-        #self.save_transformed_data(file_path)
-        return self.transformed_data
+        self.save_transformed_data('tsne', embedding_method_name, self.transformed_data)
+        return

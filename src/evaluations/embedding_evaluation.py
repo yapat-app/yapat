@@ -4,14 +4,14 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
+from sklearn.metrics import f1_score, mean_squared_error, accuracy_score
 from npeet.entropy_estimators import entropy as calculate_entropy
 
 from evaluations import BaseEvaluation
 
 
 class EmbeddingsEvaluation(BaseEvaluation):
-    def __init__(self, variance_threshold: float = 0.95, to_predict:str = 'Hour', max_iter:int = 50000, C: float = 0.1,
+    def __init__(self, embedding_method_name, clustering_method_name, variance_threshold: float = 0.95, to_predict:str = 'Hour', max_iter:int = 50000, C: float = 0.1,
                  gamma:float = 0.01, kernel:str = 'linear' ):
         """
                 Initialize the EmbeddingsEvaluation with parameters for PCA and SVC.
@@ -22,20 +22,32 @@ class EmbeddingsEvaluation(BaseEvaluation):
                 - gamma: float, kernel coefficient for the SVC.
                 - kernel: str, type of kernel to be used in SVC.
                 """
-        super().__init__()
+        super().__init__(embedding_method_name, clustering_method_name)
         self.variance_threshold = variance_threshold # For explained variance
         self.to_predict = to_predict
         self.model = SVC(random_state=42, max_iter=max_iter, C=C, gamma=gamma, kernel=kernel) # For classifier
 
-    def evaluate_classifier(self, X, y):
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        self.model.fit(X_train, y_train)
-        y_pred = self.model.predict(X_test)
+    def evaluate_classifier(self, embeddings):
+        embeddings['Time'] = embeddings.index.map(self.extract_hour)
+        embeddings['Location'] = embeddings.index.map(self.extract_location)
+        X = embeddings.drop(['Time', 'Location'], axis=1)
+        y_time = embeddings['Time']
+        y_location = embeddings['Location']
+
+        X_train, X_test, y_time_train, y_time_test = train_test_split(X, y_time, test_size=0.2, random_state=42)
+        _, _, y_location_train, y_location_test = train_test_split(X, y_location, test_size=0.2, random_state=42)
+
+        svc_time = self.model.fit(X_train, y_time_train)
+        svc_location = self.model.fit(X_train, y_location_train)
+
+        y_time_pred = svc_time.predict(X_test)
+        y_location_pred = svc_location.predict(X_test)
+
         results = {
-            'accuracy': accuracy_score(y_test, y_pred),
-            'f1_score': f1_score(y_test, y_pred, average='weighted'),
-            'recall': recall_score(y_test, y_pred, average='weighted'),
-            'precision': precision_score(y_test, y_pred, average='weighted')
+            'f1_score_time': f1_score(y_time_test, y_time_pred, average='weighted'),
+            'f1_score_location': f1_score(y_location_test, y_location_pred, average='weighted'),
+            'accuracy_time': accuracy_score(y_time_test, y_time_pred),
+            'accuracy_location': accuracy_score(y_location_test, y_location_pred)
         }
         return results
 
@@ -52,17 +64,24 @@ class EmbeddingsEvaluation(BaseEvaluation):
         return percentage_of_components
 
 
-    def evaluate(self, dataset_id: int, embedding_id: int):
+    def evaluate(self):
 
-        data = self.load_data('embeddings', dataset_id, embedding_id)
-        self.scaled_data = self.scale_data(data)
-        entropy_result = self.calculate_entropy(self.scaled_data)
-        explained_variance_result = self.calculate_explained_variance(self.scaled_data)
-        #classifier_results = self.evaluate_classifier(self.scaled_data, y)
-        evaluation_results = {
-            "Entropy": entropy_result,
-            "Explained Variance": explained_variance_result,
-           # **classifier_results
-        }
-        # self.save_results('embeddinds', evaluation_results, dataset_id, embedding_id)
-        return evaluation_results
+        embeddings, _ = self.load_data()
+        if not embeddings.empty:
+            self.scaled_data = self.scale_data(embeddings)
+            entropy_result = self.calculate_entropy(self.scaled_data)
+            explained_variance_result = self.calculate_explained_variance(self.scaled_data)
+            classifier_results = self.evaluate_classifier(embeddings)
+            evaluation_results = {
+                "Entropy": entropy_result,
+                "Explained Variance": explained_variance_result,
+                **classifier_results,
+            }
+        else:
+            evaluation_results = {
+                "Entropy": 0.0,
+                "Explained Variance": 0.0,
+                # **classifier_results
+            }
+        self.save_results('embeddings', evaluation_results)
+        return

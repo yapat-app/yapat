@@ -4,3 +4,8 @@
 /venv/
 /src/instance/
 .DS_Store
+
+# Ignore compiled Python files
+__pycache__/
+*.pyc
+*.pyo

@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from flask_login import UserMixin
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, JSON
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, JSON, Boolean
 from sqlalchemy.orm import relationship, backref
 
 from extensions import sqlalchemy_db
@@ -25,6 +25,8 @@ class Dataset(sqlalchemy_db.Model):
     dataset_name = Column(String(255), unique=True, nullable=False)
     path_audio = Column(String(255), unique=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    is_selected = Column(Boolean, default=False)  # True if selected, False otherwise
+
 
 
 # 2. Embedding Methods Table

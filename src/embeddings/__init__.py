@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy import select
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.exc import NoResultFound, SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
 from schema_model import Dataset
@@ -196,4 +196,67 @@ class BaseEmbedding:
 
         # Return the concatenated DataFrame of processed audio files.
         return self.data
+
+    def save_embeddings(self, embedding_method_name:str, embeddings):
+        if embeddings is None:
+            logger.warning("No embeddings available to save")
+            return
+        try:
+            with server.app_context():
+                # It should be handled if the dataset is changed while the emebedding are calculated
+                selected_dataset = sqlalchemy_db.session.query(Dataset).filter_by(is_selected=True).first()
+                if not selected_dataset:
+                    logger.warning("No dataset is currently selected. Cannot save embeddings.")
+                    return
+                embedding_method = sqlalchemy_db.session.query(EmbeddingMethod).filter_by(
+                    method_name=embedding_method_name).first()
+                if not embedding_method:
+                    logger.error(f"Embedding method '{embedding_method_name}' not found in the database.")
+                    return
+
+                existing_entry = sqlalchemy_db.session.query(EmbeddingResult).filter_by(
+                    dataset_id=selected_dataset.id,
+                    embedding_id=embedding_method.id
+                ).first()
+
+                if existing_entry:
+                    logger.warning(
+                        f"Embeddings for dataset ID {selected_dataset.id} and embedding method ID {embedding_method.id} already exist. Skipping save.")
+                    return
+
+                os.makedirs('results', exist_ok=True)
+                embedding_file_path = os.path.join('results',
+                                           f"{selected_dataset.dataset_name}_{embedding_method_name}_embeddings.pkl")
+                embeddings.to_pickle(embedding_file_path)
+                self._save_embedding_metadata_to_db(
+                    dataset_id=selected_dataset.id,
+                    embedding_id=embedding_method.id,
+                    file_path=embedding_file_path
+                )
+        except Exception as e:
+            logger.error(f"Error saving embeddings: {e}")
+            return
+
+    def _save_embedding_metadata_to_db(self, dataset_id: int, embedding_id: int, file_path: str) -> None:
+
+        try:
+            # Add metadata to the EmbeddingResult table
+            from src.schema_model import EmbeddingResult
+            embedding_result = EmbeddingResult(
+                dataset_id=dataset_id,
+                embedding_id=embedding_id,
+                file_path=file_path,
+                hyperparameters={},  # Optionally add hyperparameters here
+                evaluation_results={},  # Optionally add evaluation results here
+                created_at=pd.Timestamp.now(),
+                task='completed'
+            )
+            from src.extensions import sqlalchemy_db
+            sqlalchemy_db.session.add(embedding_result)
+            sqlalchemy_db.session.commit()
+            logger.info(f"Embedding metadata saved to the database for dataset {dataset_id}")
+
+        except SQLAlchemyError as e:
+            sqlalchemy_db.session.rollback()
+            logger.error(f"Error saving embedding metadata to the database: {e}")
 
