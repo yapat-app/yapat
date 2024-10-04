@@ -4,6 +4,7 @@ import os
 import pathlib
 from importlib import import_module
 from multiprocessing import Pool
+import re
 
 import dask.distributed
 import librosa
@@ -38,32 +39,26 @@ def _split_audio_into_chunks(filename: str, chunk_duration: float, sampling_rate
     # Load the audio file with librosa
     audio, sampling_rate = librosa.load(filename, sr=sampling_rate)
 
-    chunk_size = sampling_rate * chunk_duration
+    total_duration = len(audio) / sampling_rate
+    # Checks for pattern like anura data set
+    pattern_with_seconds = r'.*_\d{6,8}_\d{6}_\d{1,3}_\d{1,3}\.\w{3}'
 
-    # Clip audio at a multiple of chunk_size
-    audio = audio[:int(len(audio) // chunk_size * chunk_size)]
-
-    # Split the audio into non-overlapping chunks
-    chunked_audio = np.split(audio, len(audio) // chunk_size)
-
-    # Generate filenames for each chunk
-    prefix, _ = filename.rsplit('.', 1)
-    prefix = os.path.basename(prefix)
-    t_start = [i * chunk_duration for i in range(len(chunked_audio))]
-    t_end = [(i + 1) * chunk_duration for i in range(len(chunked_audio))]
-
-    # Create a DataFrame with chunked filenames and corresponding audio data
-    df = pd.DataFrame(
-        data={
-            "audio_data": chunked_audio,
-            "filename": filename,
-            "t_start": t_start,
-            "t_end": t_end
-        },
-        index=[f"{prefix}_{i}_{j}" for i, j in zip(t_start, t_end)]
-    )
-    return df
-
+    if abs(total_duration - chunk_duration) < 0.1:
+        if re.match(pattern_with_seconds, filename):
+            a = 'not identified'
+            return pd.DataFrame({"filename": [filename], "audio_data": [audio]}).set_index("filename")
+    else:
+        chunk_size = sampling_rate * chunk_duration
+        remainder = len(audio) % chunk_size
+        if remainder != 0:
+            audio = audio[:-remainder]
+        chunked_audio = np.split(audio, len(audio) // chunk_size)
+        prefix, suffix = filename.rsplit('.', 1)
+        indices = [f"{prefix}_{i * chunk_duration}_{(i + 1) * chunk_duration:.0f}.{suffix}" for i in
+                   range(len(chunked_audio))]
+        df = pd.DataFrame({"filename": indices, "audio_data": chunked_audio})
+        df.set_index("filename", inplace=True)
+        return df
 
 class BaseEmbedding:
     """
