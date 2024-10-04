@@ -1,0 +1,14 @@
+.custom-nav-link {
+    color: black;  /* Set text color to black or any visible color */
+    background-color: transparent; /* Transparent background */
+}
+
+.custom-nav-link:hover {
+    background-color: #007bff;  /* Set background on hover */
+    color: white;  /* Keep text white on hover */
+}
+
+.custom-nav-link.active {
+    background-color: #0056b3;  /* Set background color when active */
+    color: white;  /* Keep text white when active */
+}
