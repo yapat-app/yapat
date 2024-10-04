@@ -33,7 +33,7 @@ class ClusterTemporalHist(BaseVisualization):
         fig = px.line(df_count, x=self.average_based, y='Count', color='Cluster Label',
                       title='Number of Cluster Occurrences over Time',
                       labels={self.average_based: self.average_based.capitalize(), 'Count': 'Occurrences',
-                              'Cluster Label': 'Cluster'}, line_shape='spline')
+                              'Cluster Label': 'Cluster'}, )
         fig.update_layout(xaxis_title=self.average_based.capitalize(), yaxis_title='Occurrences')
         return fig
 
