@@ -1,9 +1,9 @@
 import logging
 import dash
-import dash_bootstrap_components as dbc
 from dash import html, dcc, dash_table
+import dash_bootstrap_components as dbc
 
-from .callbacks import list_existing_methods, fetch_embedding_and_clustering_methods
+from pages.explore.callbacks import list_existing_methods
 from .. import login_required_layout
 
 logger = logging.getLogger(__name__)
@@ -15,134 +15,145 @@ dash.register_page(
     title='Explore | YAPAT'
 )
 
-
-def create_modal(title, button_text, id_prefix):
-    return dbc.Modal(
-        [
-            dbc.ModalHeader(dbc.ModalTitle(title)),
-            dbc.ModalBody([
-                html.P("Representation space"),
-                dcc.Dropdown(
-                    options=[{'label': method, 'value': method} for method in list_existing_methods('embeddings')],
-                    value='birdnet', multi=False,
-                    placeholder="Select embedding",
-                    id=f"{id_prefix}-methods-embedding",
-                ),
-                html.P("Clustering"),
-                dcc.Dropdown(
-                    options=[{'label': method, 'value': method} for method in list_existing_methods('clustering')],
-                    value='kmeans', multi=False,
-                    placeholder="Select clustering method",
-                    id=f"{id_prefix}-methods-clustering"
-                ),
-                html.P("Dimensionality reduction (for visualization)"),
-                dcc.Dropdown(
-                    options=[{'label': method, 'value': method} for method in
-                             list_existing_methods('dimensionality_reduction')],
-                    value='umap_reducer', multi=False,
-                    placeholder="Select post-clustering reduction",
-                    id=f"{id_prefix}-methods-dimred-viz"
-                )
-            ]),
-            dbc.ModalFooter([
-                dbc.Button("Cancel", id=f"{id_prefix}-cancel", n_clicks=0, color="secondary"),
-                dbc.Button(button_text, id=f"{id_prefix}-confirm", n_clicks=0, color="primary"),
-            ])
-        ],
-        id=f"{id_prefix}-modal",
-        centered=True,
-        is_open=False
-    )
 @login_required_layout
 def layout():
-    columns = [
-        {"name": "Metric", "id": "metric"},
-        {"name": "BirdNET", "id": "birdnet"},
-        {"name": "Acoustic Indices", "id": "acoustic_indices"},
-        {"name": "VAE", "id": "vae"}
-    ]
+    sidebar = dbc.Col(
+        dbc.Nav(
+            [
+                dbc.NavLink("Pipeline", id="pipeline-link", n_clicks=0,
+                            className="custom-nav-link"),
+                dbc.NavLink("Visualisation", id="visualisation-link", n_clicks=0,
+                            className="custom-nav-link"),
+                dbc.NavLink("Evaluation", id="evaluation-link", n_clicks=0,
+                            className="custom-nav-link")
+            ],
+            vertical=True,
+            pills=True
+        ),
+        width=2,
+    )
+    # sidebar = dbc.Col(
+    #     dbc.Nav(
+    #         [
+    #             dbc.NavLink("Pipeline", href="/explore#pipeline", id="pipeline-link", active="exact",
+    #                          className="custom-nav-link"),
+    #             dbc.NavLink("Visualisation", href="/explore#visualisation", id="visualisation-link", active="exact",
+    #                         className="custom-nav-link"),
+    #             dbc.NavLink("Evaluation", href="/explore#evaluation", id="evaluation-link", active="exact",
+    #                         className="custom-nav-link")
+    #         ],
+    #         vertical=True,
+    #         pills=True
+    #     ),
+    #     width=2,
+    # )
 
-    # Define the data for each row
-    data = [
-        {"metric": "F1 Score (Time Prediction)", "birdnet": 0, "acoustic_indices": 0, "vae": 0},
-        {"metric": "Accuracy (Time Prediction)", "birdnet": 0, "acoustic_indices": 0, "vae": 0},
-        {"metric": "F1 Score (Location Prediction)", "birdnet": 0, "acoustic_indices": 0, "vae": 0},
-        {"metric": "Accuracy (Location Prediction)", "birdnet": 0, "acoustic_indices": 0, "vae": 0},
-        {"metric": "Explained Variance", "birdnet": 0, "acoustic_indices": 0, "vae": 0},
-        {"metric": "Entropy", "birdnet": 0, "acoustic_indices": 0, "vae": 0},
-        {"metric": "Silhouette Index", "birdnet":  0, "acoustic_indices": 0, "vae": 0},
-        {"metric": "Davies Bouldin Index", "birdnet": 0, "acoustic_indices":  0, "vae":  0}
-    ]
+    # Pipeline Content
+    pipeline_content = html.Div([
+        html.H5("Pipeline Options"),
 
-    layout = dbc.Container([
-        html.Div([
-            # Store for loaded figures
-            dcc.Store(id='loaded-figures-store', data={}),
-            # Header
-            dbc.Row([
-                html.H2("Visualization Pipelines"),
-                html.P(["Mix and match methods for data representation/embedding, clustering, and "
-                        "dimensionality reduction."
-                        "Create new pipeline to calculate and Load Pipeline to evaluate and visualise."]),
-            ]),
+        # Dropdown for embedding methods
+        html.P("Representation space"),
+        dcc.Dropdown(
+            options=[{'label': method, 'value': method} for method in list_existing_methods('embeddings')],
+            value='birdnet',  # Default value
+            multi=False,
+            placeholder="Select embedding",
+            id="pipeline-methods-embedding"
+        ),
 
-            # Main
-            dbc.Row([
-                dbc.Col([
-                    dbc.Row([
-                        # html.H5('Build pipeline'),
-                        dbc.ButtonGroup([
-                            # dbc.Button("Quickstart", id="quickstart-pipeline", n_clicks=0),
-                            dbc.Button("New Pipeline (Compute)", id="new-pipeline", n_clicks=0),
-                            dbc.Button("Load Pipeline (Visualize)", id="load-pipeline", n_clicks=0),
-                            dbc.Button("Fetch Available Evaluations", id="fetch-eval", n_clicks=0),
+        # Dropdown for clustering methods
+        html.P("Clustering"),
+        dcc.Dropdown(
+            options=[{'label': method, 'value': method} for method in list_existing_methods('clustering')],
+            value='kmeans',  # Default value
+            multi=False,
+            placeholder="Select clustering method",
+            id="pipeline-methods-clustering"
+        ),
 
-                        ], vertical=True),
-                    ], class_name='my-4'),
-                    # Status Box
-                    dbc.Row([
-                        html.Div(id='status-box', children="", style={'marginTop': '20px'})
-                    ])
-                ], width=2),
+        # Dropdown for dimensionality reduction methods
+        html.P("Dimensionality reduction (for visualization)"),
+        dcc.Dropdown(
+            options=[{'label': method, 'value': method} for method in list_existing_methods('dimensionality_reduction')],
+            value='umap_reducer',  # Default value
+            multi=False,
+            placeholder="Select post-clustering reduction",
+            id="pipeline-methods-dimred-viz"
+        ),
 
-                # Right Sidebar - Evaluation and Visualization
-                dbc.Col([
-                    dbc.Row([
-                        html.H5("Evaluation Metrics"),
-                        dash_table.DataTable(
-                            id='evaluation-table',
-                            columns=columns,
-                            data=data,
-                            merge_duplicate_headers=True,  # This will merge headers like 'birdnet' in one line
-                            style_table={'overflowX': 'auto'},
-                            style_cell={'textAlign': 'center'}
-                        ),
-                    ], class_name='my-4'),
+        # Buttons for actions
+        dbc.Button("Create Pipeline (Compute)", id="create-pipeline", n_clicks=0, className="my-2"),
+        dbc.Button("Load Pipeline (Visualize)", id="load-pipeline", n_clicks=0, className="my-2"),
+        html.Div(id='status-pipeline', style={"marginTop": "20px"}),
+    ],
+    style={'display': 'none'},
+    id= "pipeline-content")
 
-                    dbc.Row([
-                        # Visualization Section
-                        html.H5("Visualization"),
-                        dbc.Tabs([
-                            dbc.Tab(label='Cluster Time Histogram', tab_id='cluster-time-histogram'),
-                            dbc.Tab(label='Cluster Time Grid', tab_id='cluster-time-grid'),
-                            dbc.Tab(label='State Space Visualisation', tab_id='cluster-state-space'),
-                            dbc.Tab(label='Time Series Visualisation', tab_id='time-series'),
-                            dbc.Tab(label='Temporal Rose Plot', tab_id='temp-rose-plot'),
-                            dbc.Tab(label='Explained Variance Plot', tab_id='explained-variance'),
+    # Visualization Content
+    visualization_content = html.Div(
+        children=[
+            dbc.Tabs(
+                id='visualisation-tabs',
+                active_tab='cluster-time-histogram',
+                children=[
+                    dbc.Tab(label='Cluster Time Histogram', tab_id='cluster-time-histogram'),
+                    dbc.Tab(label='Cluster Time Grid', tab_id='cluster-time-grid'),
+                    dbc.Tab(label='State Space Visualisation', tab_id='cluster-state-space'),
+                    dbc.Tab(label='Time Series Visualisation', tab_id='time-series'),
+                    dbc.Tab(label='Temporal Rose Plot', tab_id='temp-rose-plot'),
+                    dbc.Tab(label='Explained Variance Plot', tab_id='explained-variance'),
+                ]
+            ),
+            html.Div(id='figure-display'),
+            html.Div(id='status-vis', style={"marginTop": "20px"}),
+        ],
+        style={'display': 'none'},
+        id='visualisation-content'
+    )
 
-                        ], id='visualization-tabs', active_tab='cluster-time-histogram'),
+    # Evaluation Content
+    evaluation_content = html.Div(
+        children=[
+            html.H5("Evaluation Metrics"),
+            dash_table.DataTable(
+                id="evaluation-table",
+                columns=[
+                    {"name": "Metric", "id": "metric"},
+                    {"name": "BirdNET", "id": "birdnet"},
+                    {"name": "Acoustic Indices", "id": "acoustic_indices"},
+                    {"name": "VAE", "id": "vae"}
+                ],
+                data=[
+                    {"metric": "F1 Score (Time Prediction)", "birdnet": 0, "acoustic_indices": 0, "vae": 0},
+                    {"metric": "Accuracy (Time Prediction)", "birdnet": 0, "acoustic_indices": 0, "vae": 0},
+                    {"metric": "F1 Score (Location Prediction)", "birdnet": 0, "acoustic_indices": 0, "vae": 0},
+                    {"metric": "Accuracy (Location Prediction)", "birdnet": 0, "acoustic_indices": 0, "vae": 0},
+                    {"metric": "Explained Variance", "birdnet": 0, "acoustic_indices": 0, "vae": 0},
+                    {"metric": "Entropy", "birdnet": 0, "acoustic_indices": 0, "vae": 0},
+                    {"metric": "Silhouette Index", "birdnet": 0, "acoustic_indices": 0, "vae": 0},
+                    {"metric": "Davies Bouldin Index", "birdnet": 0, "acoustic_indices": 0, "vae": 0}
+                ],
+                style_table={'overflowX': 'auto'},
+            )
+        ],
+        style={'display': 'none'},
+        id ="evaluation-content"
+    )
 
-                        # Placeholder for visualizations
-                        html.Div(id='visualization-content', className='my-4')
-                    ])
-                ], width=9),
-            ]),
+    # Content area to display based on sidebar selection
+    content = dbc.Col(
+        [
+            pipeline_content,
+            visualization_content,
+            evaluation_content
+        ],
+        width=10
+    )
 
-            # Modals
-            create_modal("Create New Pipeline", "Create", "new"),
-            create_modal("Load Pipeline to Visualize", "Visualize Results", "load"),
-            html.Div(id='loaded-figures', style={'display': 'none'})
-
-        ])
+    # Main layout with sidebar and content
+    return dbc.Container([
+        dbc.Row([sidebar, content]),
+        html.Div(id='loaded-figures', style={'display': 'none'})
     ])
-    return layout
+
