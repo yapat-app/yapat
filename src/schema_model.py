@@ -50,7 +50,9 @@ class EmbeddingResult(sqlalchemy_db.Model):
     file_path = Column(String(255), nullable=False)  # Store path to the embedding file
     hyperparameters = Column(JSON, nullable=True)  # Hyperparameters stored as JSON
     evaluation_results = Column(JSON, nullable=True)
+    task = Column(String(50), nullable=False, default='pending')  # Track task status
     created_at = Column(DateTime, default=datetime.utcnow)
+
 
     # Relationships
     dataset = relationship('Dataset', backref=backref('embedding_results', lazy=True))
@@ -81,6 +83,7 @@ class ClusteringResult(sqlalchemy_db.Model):
                                nullable=False)  # Store path to the clustering result file
     hyperparameters = Column(JSON, nullable=True)  # Clustering hyperparameters stored as JSON
     evaluation_results = Column(JSON, nullable=True)
+    task = Column(String(50), nullable=False, default='pending')  # Track task status
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -104,18 +107,19 @@ class DimReductionResult(sqlalchemy_db.Model):
     __bind_key__ = "pipeline_db"
 
     result_id = Column(Integer, primary_key=True)
-    clustering_result_id = Column(Integer,
-                                  ForeignKey('clustering_results.result_id'), nullable=False)
+    embedding_id = Column(Integer, ForeignKey('embedding_results.id'),
+                          nullable=False)
     method_id = Column(Integer, ForeignKey('dimensionality_reduction.method_id'),
                        nullable=False)
     reduction_file_path = Column(String(255),
                                  nullable=False)  # Path to the dimensionality reduction result file
     hyperparameters = Column(JSON,
                              nullable=True)  # Dimensionality reduction hyperparameters stored as JSON
+    task = Column(String(50), nullable=False, default='pending')  # Track task status
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
-    clustering_result = relationship('ClusteringResult',
+    clustering_result = relationship('EmbeddingResult',
                                      backref=backref('dim_reduction_results', lazy=True))
     method = relationship('DimReductionMethod',
                           backref=backref('dim_reduction_results', lazy=True))
