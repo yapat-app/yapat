@@ -1,15 +1,17 @@
-import pandas as pd
 import json
 import logging
 import os
-import dask
-from sklearn.preprocessing import StandardScaler
 
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
 from sqlalchemy.exc import SQLAlchemyError
-from src import server, sqlalchemy_db
-from schema_model import Dataset, EmbeddingResult, EmbeddingMethod, ClusteringMethod, ClusteringResult, DimReductionResult, DimReductionMethod
+
+from extensions import sqlalchemy_db
+from schema_model import Dataset, EmbeddingResult, EmbeddingMethod, ClusteringMethod, ClusteringResult
+from utils.extensions import server
 
 logger = logging.getLogger(__name__)
+
 
 class BaseEvaluation:
     def __init__(self, embedding_method_name, clustering_method_name):
@@ -31,7 +33,6 @@ class BaseEvaluation:
             cluster_labels = None
 
         return embeddings, cluster_labels
-
 
     def scale_data(self, data):
         data.dropna(axis=1, inplace=True)
@@ -63,7 +64,7 @@ class BaseEvaluation:
                     embedding_result.evaluation_results = json.dumps(evaluation_results)
                 elif indicator_evaluation == 'clusters':
                     clustering_method = session.query(ClusteringMethod).filter_by(
-                    method_name=self.clustering_method_name).first()
+                        method_name=self.clustering_method_name).first()
                     clustering_result = sqlalchemy_db.session.query(ClusteringResult).filter_by(
                         method_id=clustering_method.method_id,
                         embedding_id=embedding_result.id
@@ -77,9 +78,6 @@ class BaseEvaluation:
         finally:
             session.close()
 
-
-
-
     def check_pipeline_completion(self):
         session = sqlalchemy_db.session
         try:
@@ -87,7 +85,8 @@ class BaseEvaluation:
                 selected_dataset = session.query(Dataset).filter_by(is_selected=True).first()
                 dataset_id = selected_dataset.id
                 if self.embedding_method_name:
-                    embedding_method = session.query(EmbeddingMethod).filter_by(method_name=self.embedding_method_name).first()
+                    embedding_method = session.query(EmbeddingMethod).filter_by(
+                        method_name=self.embedding_method_name).first()
                     embedding_result = session.query(EmbeddingResult).filter_by(
                         dataset_id=dataset_id, embedding_id=embedding_method.id, task='completed'
                     ).first()
@@ -99,7 +98,8 @@ class BaseEvaluation:
                     embedding_file_path = None
 
                 if self.clustering_method_name:
-                    clustering_method = session.query(ClusteringMethod).filter_by(method_name=self.clustering_method_name).first()
+                    clustering_method = session.query(ClusteringMethod).filter_by(
+                        method_name=self.clustering_method_name).first()
                     clustering_result = session.query(ClusteringResult).filter_by(
                         embedding_id=embedding_result.id, method_id=clustering_method.method_id, task='completed'
                     ).first()
@@ -110,19 +110,8 @@ class BaseEvaluation:
                 else:
                     clustering_file_path = None
 
-
                 return embedding_file_path, clustering_file_path
 
         except SQLAlchemyError as e:
             session.rollback()
             return f"Error querying the database: {e}"
-
-
-
-
-
-
-
-
-
-

@@ -197,7 +197,7 @@ class BaseEmbedding:
         # Return the concatenated DataFrame of processed audio files.
         return self.data
 
-    def save_embeddings(self, embedding_method_name:str, embeddings):
+    def save_embeddings(self, embedding_method_name: str, embeddings):
         if embeddings is None:
             logger.warning("No embeddings available to save")
             return
@@ -226,7 +226,7 @@ class BaseEmbedding:
 
                 os.makedirs('results', exist_ok=True)
                 embedding_file_path = os.path.join('results',
-                                           f"{selected_dataset.dataset_name}_{embedding_method_name}_embeddings.pkl")
+                                                   f"{selected_dataset.dataset_name}_{embedding_method_name}_embeddings.pkl")
                 embeddings.to_pickle(embedding_file_path)
                 self._save_embedding_metadata_to_db(
                     dataset_id=selected_dataset.id,
@@ -241,7 +241,7 @@ class BaseEmbedding:
 
         try:
             # Add metadata to the EmbeddingResult table
-            from src.schema_model import EmbeddingResult
+            from schema_model import EmbeddingResult
             embedding_result = EmbeddingResult(
                 dataset_id=dataset_id,
                 embedding_id=embedding_id,
@@ -251,7 +251,7 @@ class BaseEmbedding:
                 created_at=pd.Timestamp.now(),
                 task='completed'
             )
-            from src.extensions import sqlalchemy_db
+            from extensions import sqlalchemy_db
             sqlalchemy_db.session.add(embedding_result)
             sqlalchemy_db.session.commit()
             logger.info(f"Embedding metadata saved to the database for dataset {dataset_id}")
@@ -259,4 +259,3 @@ class BaseEmbedding:
         except SQLAlchemyError as e:
             sqlalchemy_db.session.rollback()
             logger.error(f"Error saving embedding metadata to the database: {e}")
-

@@ -2,7 +2,7 @@ import os
 import json
 from dash import Input, Output, State, callback, callback_context, dcc, html
 
-from embeddings import get_embedding_model
+from utils import get_embedding_model
 from clustering import get_clustering_model
 from dimensionality_reduction import get_dr_model
 from evaluations.embedding_evaluation import EmbeddingsEvaluation
