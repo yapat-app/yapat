@@ -6,7 +6,7 @@ from dash import html
 
 from pages.home import callbacks
 # from .callbacks import scan_projects
-from .. import login_required_layout
+from pages import login_required_layout
 from pages.explore.callbacks import list_existing_methods
 
 

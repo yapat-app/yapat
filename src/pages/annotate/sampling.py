@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from flask_login import current_user
 
+from utils import glob_audio_dataset
 from .model import get_model, train_model
 
 # from dash_app import app_utils
@@ -63,7 +64,7 @@ def replenish_queue(n_min, project_name, method, n_max=None):
 
     ndx_pending = queue['status'] == 'pending'
     if ndx_pending.sum() < n_min:
-        all_clips = glob.glob(os.path.join('projects', project_name, 'clips', '*.wav'))
+        all_clips = glob_audio_dataset(os.path.join('projects', project_name, 'clips'))
         candidate_clips = list(set([os.path.basename(p) for p in all_clips]) - set(queue['sound_clip_url']))
 
         n_max = n_max or n_min * 2

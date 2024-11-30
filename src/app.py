@@ -6,14 +6,17 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import html, dcc, callback, Output, Input, State, Dash
 from dash.exceptions import PreventUpdate
+from dask.distributed import Client
+from distributed import LocalCluster
 from flask_login import login_user
 from sqlalchemy.exc import SQLAlchemyError
 
 from components import navbar, footer
 from components.login import login_location
-from schema_model import User
-from src import login_manager, sqlalchemy_db, server
 from pages.explore.callbacks import update_db_methods
+from schema_model import User
+from extensions import login_manager, sqlalchemy_db
+from utils import check_socket, server
 from utils.settings import APP_HOST, APP_PORT, APP_DEBUG, DEV_TOOLS_PROPS_CHECK
 
 server = Flask(__name__)
@@ -23,6 +26,7 @@ server.config.update(SQLALCHEMY_TRACK_MODIFICATIONS=False)
 server.secret_key = str(random.randint(a=0, b=1000000))
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 def create_app(name='yapat', server=server, title='YAPAT | Yet Another PAM Annotation Tool'):
@@ -115,16 +119,24 @@ def register_user(n_clicks, username, password):
 
 # Prevent app from running on Dask workers by using a main check
 if __name__ == "__main__":
+
+    dask_client_address = {"host": "localhost", "port": 8687}
+    if check_socket(**dask_client_address):
+        dask_client = Client(address=f"{dask_client_address.get('host')}:{dask_client_address.get('port')}")
+        logger.info("Connected to existing Dask client")
+    else:
+        cluster = LocalCluster(name='yapat_dask', n_workers=4, scheduler_port=dask_client_address.get('port'),
+                               dashboard_address=':8787')
+        dask_client = Client(cluster)
+        logger.info("Created new Dask client")
+
     # Only initialize the Dash app if this script is the entry point
     app = create_app()
 
-    # Run the Dash app
-    app.run_server(
-        host=APP_HOST,
-        port=APP_PORT,
-        debug=APP_DEBUG,
-        dev_tools_props_check=DEV_TOOLS_PROPS_CHECK
-    )
+    # Initialize extensions with the app
+    sqlalchemy_db.init_app(server)
+    login_manager.init_app(server)
+    login_manager.login_view = 'login'
 
     # Any additional initialization (such as database operations) should be kept in the main block
     with server.app_context():
@@ -136,3 +148,11 @@ if __name__ == "__main__":
         except SQLAlchemyError as e:
             sqlalchemy_db.session.rollback()
             logger.exception(e)
+
+    # Run the Dash app
+    app.run_server(
+        host=APP_HOST,
+        port=APP_PORT,
+        debug=APP_DEBUG,
+        dev_tools_props_check=DEV_TOOLS_PROPS_CHECK
+    )

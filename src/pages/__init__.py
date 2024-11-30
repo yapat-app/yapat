@@ -3,8 +3,6 @@ import os
 from functools import wraps
 
 import librosa
-import numpy as np
-import soundfile as sf
 import tensorflow as tf
 from dash import dcc
 from flask_login import current_user

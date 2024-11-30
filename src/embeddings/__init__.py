@@ -1,32 +1,23 @@
-import glob
-import itertools
 import logging
 import os
-from importlib import import_module
+import pathlib
+from typing import Optional, Union
 
-import dask
 import librosa
 import numpy as np
 import pandas as pd
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import create_engine
+from sqlalchemy import select
+from sqlalchemy.exc import NoResultFound, SQLAlchemyError
+from sqlalchemy.orm import sessionmaker
 
-from extensions import sqlalchemy_db
-from schema_model import Dataset, EmbeddingMethod
+from schema_model import Dataset
+from utils import glob_audio_dataset
 
 logger = logging.getLogger(__name__)
 
 
-def register_dataset(dataset_name, path_audio, flask_server):
-    with flask_server.app_context():
-        try:
-            sqlalchemy_db.session.add(Dataset(dataset_name=dataset_name, path_audio=path_audio))
-            sqlalchemy_db.session.commit()
-        except SQLAlchemyError as e:
-            sqlalchemy_db.session.rollback()
-            logger.exception(e)
-
-
-def _split_audio_into_chunks(filename: str, chunk_duration: float, sampling_rate: int = None) -> pd.DataFrame:
+def _split_audio_into_chunks(filename: str, chunk_duration: float, sampling_rate: int or None = None) -> pd.DataFrame:
     """
     Splits an audio file into non-overlapping chunks of specified duration.
 
@@ -46,20 +37,29 @@ def _split_audio_into_chunks(filename: str, chunk_duration: float, sampling_rate
 
     # Ensure the length is a multiple of the chunk size by truncating the extra samples
     chunk_size = sampling_rate * chunk_duration
-    audio = audio[:len(audio) // chunk_size * chunk_size]
+
+    # Clip audio at a multiple of chunk_size
+    audio = audio[:int(len(audio) // chunk_size * chunk_size)]
 
     # Split the audio into non-overlapping chunks
     chunked_audio = np.split(audio, len(audio) // chunk_size)
 
     # Generate filenames for each chunk
-    prefix, suffix = filename.rsplit('.', 1)
-    indices = [f"{prefix}_{i * chunk_duration}_{(i + 1) * chunk_duration:.0f}.{suffix}" for i in
-               range(len(chunked_audio))]
+    prefix, _ = filename.rsplit('.', 1)
+    prefix = os.path.basename(prefix)
+    t_start = [i * chunk_duration for i in range(len(chunked_audio))]
+    t_end = [(i + 1) * chunk_duration for i in range(len(chunked_audio))]
 
     # Create a DataFrame with chunked filenames and corresponding audio data
-    df = pd.DataFrame({"filename": indices, "audio_data": chunked_audio})
-    df.set_index("filename", inplace=True)
-
+    df = pd.DataFrame(
+        data={
+            "audio_data": chunked_audio,
+            "filename": filename,
+            "t_start": t_start,
+            "t_end": t_end
+        },
+        index=[f"{prefix}_{i}_{j}" for i, j in zip(t_start, t_end)]
+    )
     return df
 
 
@@ -76,8 +76,6 @@ class BaseEmbedding:
         -----------
         dataset_name : pd.DataFrame or None
             DataFrame holding the processed audio data (e.g., file paths, audio features).
-        dask_client : dask.distributed.client.Client or None
-            Optional Dask client for handling distributed task execution.
         embeddings : pd.DataFrame or None
             DataFrame containing the generated embeddings for the audio dataset.
 
@@ -85,98 +83,179 @@ class BaseEmbedding:
         --------
         load_model():
             Abstract method for loading the model. Must be implemented by subclasses.
+            :raises NotImplementedError: This method must be implemented by subclasses for model loading.
+
 
         process(audio_files):
             Abstract method for processing audio files to generate embeddings. Must be implemented by subclasses.
+            :raises NotImplementedError: This method must be implemented by subclasses for model loading.
 
-        read_audio_dataset(dataset_name: str, extension: str = '.wav', sampling_rate: int = 48000) -> pd.DataFrame:
+
+        read_audio_dataset() -> pd.DataFrame:
             Reads and processes an audio dataset, optionally using Dask for parallel processing.
             Returns a pandas DataFrame containing the audio file paths and other metadata.
+            :return: A pandas DataFrame indexed by 'filename' and a data column 'audio_data' containing processed audio chunks.
         """
 
-    def __init__(self, dataset_name: str, dask_client: dask.distributed.client.Client or None = None,
-                 flask_server=None) -> None:
+    def __init__(
+            self,
+            dataset_name: str,
+            clip_duration: float = 3.0,
+            model_path: Optional[Union[str, pathlib.Path]] = None,
+            sampling_rate: Optional[int] = None,
+    ) -> None:
         """
         Initialize the BaseEmbedding class with the model path and an optional Dask client.
 
         :param dataset_name: Name of dataset as stored in Dataset.dataset_name from the database.
-        :param dask_client: Optional Dask client for handling distributed task execution.
-        :param data: Initialized to None, will hold the processed audio data once read.
-        :param embeddings: Initialized to None, will store the generated embeddings.
+        :param clip_duration: Audio files are chunked in clips of duration specified in seconds.
+        :param model_path: Path of pre-saved model (if any).
+        :param sampling_rate: Sample rate used by `librosa.load`. If None, native sampling rate will be used.
         """
+
+        # Input args
         self.dataset_name = dataset_name
-        self.dask_client = dask_client  # Dask client is used for distributed processing of tasks.
-        self.data = None
-        self.embeddings = None
+        self.model_path = model_path
+        self.sampling_rate = sampling_rate
+        self.clip_duration = clip_duration
+
+        # Placeholders
+        self.data = pd.DataFrame()  # Initialize as empty DataFrame
+        self.embeddings = pd.DataFrame()  # Initialize as empty DataFrame
+        self.list_of_audio_files = []
+        self.path_dataset = None
 
     def load_model(self):
         """
-        Placeholder method for loading the model. This should be implemented by subclasses.
+        Placeholder method for loading the model. This should be implemented by subclasses if needed.
         """
-        raise NotImplementedError("This method should be implemented by subclasses")
+        if self.model_path:
+            raise NotImplementedError("Subclasses should implement this method if a model path is provided.")
+        else:
+            pass
 
-    def process(self, audio_files):
+    def process(self):
         """
         Placeholder method for processing audio files. This should be implemented by subclasses.
         """
         raise NotImplementedError("This method should be implemented by subclasses")
 
-    def read_audio_dataset(self, dataset_name: str, extension: str = '.wav', chunk_duration: float = 3,
-                           sampling_rate: int = 48000, flask_server=None) -> pd.DataFrame:
-        """
-                Read the dataset of audio files, and optionally process it using Dask for parallelization.
+    def get_path_dataset(self, url_db: Optional[str] = None):
 
-                :param flask_server:
-                :param chunk_duration:
-                :param dataset_name: Name of the dataset to load from the database.
-                :param extension: File extension for audio files to be included (default is '.wav').
-                :param sampling_rate: The sampling rate for the audio files (default is 48,000).
+        # Create a new DB session for the task
+        url_db = url_db or 'sqlite:///instance/pipeline_data.db'
+        engine = create_engine(url_db)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+        # Fetch the path to the dataset from the database within this session
+        try:
+            path_dataset = session.execute(
+                select(Dataset.path_audio).where(Dataset.dataset_name == self.dataset_name)
+            ).scalar_one()
+        except NoResultFound:
+            raise ValueError(f"No dataset found for name: {self.dataset_name}")
+        finally:
+            # Close the session after the task is done
+            session.close()
+
+        return path_dataset
+
+    def read_audio_dataset(self) -> pd.DataFrame:
+        """
+        Read the dataset of audio files and process it using Dask for parallelization if available.
+
                 :return: A pandas DataFrame containing audio file paths and any other relevant metadata.
                 """
-        # Fetch the path to the dataset from the database using a Flask app context.
-        with flask_server.app_context():
-            path_dataset = sqlalchemy_db.session.execute(sqlalchemy_db.select(Dataset.path_audio).where(
-                Dataset.dataset_name == dataset_name)).scalar_one_or_none()
 
-        # Recursively find all audio files in the dataset with the specified extension.
-        list_of_audio_files = glob.glob(os.path.join(path_dataset, '**', '*.' + extension.lstrip('.')), recursive=True)
+        self.path_dataset = self.get_path_dataset()
+        self.list_of_audio_files = glob_audio_dataset(path_dataset=self.path_dataset)
 
-        # If a Dask client is provided, parallelize the audio chunking process using Dask.
-        if self.dask_client is not None:
-            # Use Dask to map audio files to chunking tasks and gather the results.
-            dfs_audio = self.dask_client.map(_split_audio_into_chunks, list_of_audio_files,
-                                             itertools.repeat(chunk_duration), itertools.repeat(sampling_rate))
-            df_audio = pd.concat(self.dask_client.gather(dfs_audio))  # Concatenate the results.
-        else:
-            # If no Dask client is provided, process the audio files locally.
-            dfs_audio = [
-                _split_audio_into_chunks(path_audio_file, chunk_duration=chunk_duration, sampling_rate=sampling_rate)
-                for path_audio_file in list_of_audio_files]
-            df_audio = pd.concat(dfs_audio)
+        if not self.list_of_audio_files:
+            raise ValueError("No audio files found in the dataset.")
+
+            # if self.dask_client is not None:
+            #     dfs_audio = self.dask_client.map(
+            #         _split_audio_into_chunks,
+            #         self.list_of_audio_files,
+            #         [self.clip_duration] * len(self.list_of_audio_files),
+            #         [self.sampling_rate] * len(self.list_of_audio_files)
+            #     )
+            #     self.data = pd.concat(self.dask_client.gather(dfs_audio))
+            # else:
+            #     # Process audio files locally if no Dask client is provided
+            #     with Pool() as pool:
+            #         dfs_audio = pool.starmap(
+            #             _split_audio_into_chunks,
+            #             [(path_audio_file, self.clip_duration, self.sampling_rate) for path_audio_file in
+            #              self.list_of_audio_files]
+            #         )
+        dfs_audio = [_split_audio_into_chunks(path_audio_file, self.clip_duration, self.sampling_rate) for
+                     path_audio_file in self.list_of_audio_files]
+        self.data = pd.concat(dfs_audio)
 
         # Return the concatenated DataFrame of processed audio files.
-        return df_audio
+        return self.data
 
+    def save_embeddings(self, embedding_method_name: str, embeddings):
+        if embeddings is None:
+            logger.warning("No embeddings available to save")
+            return
+        try:
+            with server.app_context():
+                # It should be handled if the dataset is changed while the emebedding are calculated
+                selected_dataset = sqlalchemy_db.session.query(Dataset).filter_by(is_selected=True).first()
+                if not selected_dataset:
+                    logger.warning("No dataset is currently selected. Cannot save embeddings.")
+                    return
+                embedding_method = sqlalchemy_db.session.query(EmbeddingMethod).filter_by(
+                    method_name=embedding_method_name).first()
+                if not embedding_method:
+                    logger.error(f"Embedding method '{embedding_method_name}' not found in the database.")
+                    return
 
-def compute_embeddings(dataset_name: str, embedding_method: str, flask_server):
-    with flask_server.app_context():
-        path_audio = sqlalchemy_db.session.execute(
-            sqlalchemy_db.select(Dataset.path_audio).filter_by(dataset_name=dataset_name)).scalar_one_or_none()
-        embedding = sqlalchemy_db.session.execute(
-            sqlalchemy_db.select(EmbeddingMethod).filter_by(method_name=embedding_method))
-    embedding = import_module(f"embeddings.{embedding}")
-    return embedding.fit_transform(path_audio)
+                existing_entry = sqlalchemy_db.session.query(EmbeddingResult).filter_by(
+                    dataset_id=selected_dataset.id,
+                    embedding_id=embedding_method.id
+                ).first()
 
+                if existing_entry:
+                    logger.warning(
+                        f"Embeddings for dataset ID {selected_dataset.id} and embedding method ID {embedding_method.id} already exist. Skipping save.")
+                    return
 
-def get_embedding_model(method_name: str, dask_client: dask.distributed.client.Client or None = None):
-    if method_name == "birdnet":
-        from embeddings.birdnet import BirdnetEmbedding
-        return BirdnetEmbedding(method_name, dask_client)
-    elif method_name == "acoustic_indices":
-        from embeddings.acoustic_indices import AcousticIndices
-        return AcousticIndices(method_name, dask_client)
-    elif method_name == "vae":
-        from embeddings.vae import VAEEmbedding
-        return VAEEmbedding(method_name, dask_client)
-    else:
-        raise ValueError(f"Unknown embedding method: {method_name}")
+                os.makedirs('results', exist_ok=True)
+                embedding_file_path = os.path.join('results',
+                                                   f"{selected_dataset.dataset_name}_{embedding_method_name}_embeddings.pkl")
+                embeddings.to_pickle(embedding_file_path)
+                self._save_embedding_metadata_to_db(
+                    dataset_id=selected_dataset.id,
+                    embedding_id=embedding_method.id,
+                    file_path=embedding_file_path
+                )
+        except Exception as e:
+            logger.error(f"Error saving embeddings: {e}")
+            return
+
+    def _save_embedding_metadata_to_db(self, dataset_id: int, embedding_id: int, file_path: str) -> None:
+
+        try:
+            # Add metadata to the EmbeddingResult table
+            from schema_model import EmbeddingResult
+            embedding_result = EmbeddingResult(
+                dataset_id=dataset_id,
+                embedding_id=embedding_id,
+                file_path=file_path,
+                hyperparameters={},  # Optionally add hyperparameters here
+                evaluation_results={},  # Optionally add evaluation results here
+                created_at=pd.Timestamp.now(),
+                task='completed'
+            )
+            from extensions import sqlalchemy_db
+            sqlalchemy_db.session.add(embedding_result)
+            sqlalchemy_db.session.commit()
+            logger.info(f"Embedding metadata saved to the database for dataset {dataset_id}")
+
+        except SQLAlchemyError as e:
+            sqlalchemy_db.session.rollback()
+            logger.error(f"Error saving embedding metadata to the database: {e}")

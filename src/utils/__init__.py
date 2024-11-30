@@ -1,7 +1,15 @@
-import socket
-from contextlib import closing
+import glob
+import os
+
+from utils.extensions import check_socket, server
+from utils.utils import get_embedding_model
 
 
-def check_socket(host, port):
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
-        return sock.connect_ex((host, port)) == 0
+def glob_audio_dataset(path_dataset):
+    extensions = ['wav', 'aac', 'm4a', 'flac', 'mp3']
+    extensions += [ext.upper() for ext in extensions]
+    list_of_audio_files = []
+    for extension in extensions:
+        audio_files = glob.glob(os.path.join(path_dataset, '**', '*.' + extension), recursive=True)
+        list_of_audio_files.extend(audio_files)
+    return list_of_audio_files
