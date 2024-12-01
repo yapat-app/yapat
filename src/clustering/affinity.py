@@ -33,7 +33,3 @@ class Affinity(BaseClustering):
         self.labels = pd.DataFrame(self.clusterer.labels_, columns=['Cluster Label'], index=data.index)
         self.save_labels('affinity', embedding_method_name, self.labels)
         return
-
-
-
-
