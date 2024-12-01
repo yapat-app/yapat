@@ -52,7 +52,7 @@ class TestDaskAudioPipeline(unittest.TestCase):
                             # TODO Decide whether saving to disk happens inside embedding_object,
                             #  or inside a wrapper function such as
                             #  src.utils.embeddings.compute_embeddings(dataset_name, embeddings_name)
-                            future_clustering[clustering_name] = dask_client.submit(NotImplemented)
+                            future_clustering[clustering_name] = dask_client.submit(print)
 
 
 if __name__ == '__main__':
