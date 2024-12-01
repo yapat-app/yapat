@@ -24,6 +24,10 @@ server = Flask(__name__)
 server.config.update(SECRET_KEY=os.getenv('SECRET_KEY'))
 server.config.update(SQLALCHEMY_DATABASE_URI='sqlite:///users.db')
 server.config.update(SQLALCHEMY_TRACK_MODIFICATIONS=False)
+server.config.update(SQLALCHEMY_BINDS={
+    'user_db': 'sqlite:///user_management.db',
+    'pipeline_db': 'sqlite:///pipeline_data.db'
+})
 server.secret_key = str(random.randint(a=0, b=1000000))
 
 logger = logging.getLogger(__name__)
