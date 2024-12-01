@@ -26,8 +26,8 @@ def update_database_clustering_result(
     # Connect to the database
     url_db = 'sqlite:///instance/pipeline_data.db'  # Adjust as necessary
     engine = create_engine(url_db)
-    Session = sessionmaker(bind=engine)
-    with Session() as session:
+    session = sessionmaker(bind=engine)
+    with session() as session:
         try:
             method_id = session.execute(
                 select(ClusteringMethod.id).where(ClusteringMethod.method_name == clustering_method)
