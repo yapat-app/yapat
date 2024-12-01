@@ -2,8 +2,8 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 
-from .callbacks import register_callbacks
-from .. import login_required_layout
+from src.pages.annotate.callbacks import register_callbacks
+from src.pages import login_required_layout
 
 dash.register_page(
     __name__,

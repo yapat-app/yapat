@@ -4,19 +4,12 @@ import os
 import sys
 
 import dash
-# import dash_auth
 import dash_bootstrap_components as dbc
 from flask import Flask, session
 
+from src.pages.annotate.callbacks import register_callbacks
+
 sys.path.append(os.path.dirname(__file__))
-
-from src.callbacks import register_callbacks
-from src.layout import layout
-
-# from flask_session import Session
-
-
-# from mini_custom_styles import CONTENT_STYLE
 
 # Create Flask server
 server = Flask(__name__)
@@ -34,6 +27,7 @@ app = dash.Dash(
 # server = app.server
 app.title = 'YAPAT | Yet Another PAM Annotation Tool'
 
+from src.pages.register import layout
 app.layout = layout
 # init data
 

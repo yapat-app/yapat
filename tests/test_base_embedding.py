@@ -2,8 +2,8 @@ import os
 import unittest
 from unittest.mock import patch
 
-from embeddings import BaseEmbedding
-from extensions import dask_client
+from src.embeddings import BaseEmbedding
+from src.extensions import get_dask_client
 
 
 class TestBaseEmbedding(unittest.TestCase):

@@ -4,7 +4,7 @@ from dask.distributed import LocalCluster, Client, get_worker
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 
-from utils import check_socket
+from src.utils import check_socket
 
 logger = logging.getLogger(__name__)
 

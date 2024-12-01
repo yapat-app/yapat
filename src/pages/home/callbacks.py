@@ -10,9 +10,9 @@ import pandas as pd
 import tensorflow as tf
 from dash import html, callback, Input, Output, State
 
-from pages.explore.callbacks import list_existing_datasets
-from pages.home import register_dataset
-from schema_model import Dataset
+from src.pages.explore.callbacks import list_existing_datasets
+from src.pages.home import register_dataset
+from src.schema_model import Dataset
 from src import sqlalchemy_db, server
 from sqlalchemy.exc import SQLAlchemyError
 

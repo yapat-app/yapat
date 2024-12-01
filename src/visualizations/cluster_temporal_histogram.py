@@ -1,9 +1,9 @@
 import pandas as pd
 from datetime import datetime
-import plotly.graph_objects as go
 import plotly.express as px
 
-from visualizations import BaseVisualization
+from src.visualizations import BaseVisualization
+
 
 class ClusterTemporalHist(BaseVisualization):
 

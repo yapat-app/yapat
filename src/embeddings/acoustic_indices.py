@@ -3,7 +3,8 @@ import pandas as pd
 import maad
 from maad import sound, features
 import dask
-from embeddings import BaseEmbedding
+
+from src.embeddings import BaseEmbedding
 
 
 def compute_spectral_features(audio_file: np.array, sampling_rate: int, **kwargs) -> pd.DataFrame:

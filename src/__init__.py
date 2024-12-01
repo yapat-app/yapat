@@ -3,7 +3,7 @@ import os
 
 from flask import Flask
 
-from extensions import sqlalchemy_db, login_manager
+from src.extensions import sqlalchemy_db, login_manager
 
 logger = logging.getLogger(__name__)
 

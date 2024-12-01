@@ -1,7 +1,8 @@
 import pandas as pd
 from sklearn.cluster import OPTICS
 
-from clustering import BaseClustering
+from src.clustering import BaseClustering
+
 
 class OpticsClustering(BaseClustering):
     """

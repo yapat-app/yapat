@@ -1,8 +1,8 @@
 from sklearn.cluster import AffinityPropagation
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
 
-from clustering import BaseClustering
+from src.clustering import BaseClustering
+
 
 class Affinity(BaseClustering):
     """

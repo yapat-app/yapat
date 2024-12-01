@@ -1,14 +1,13 @@
-import pandas as pd
 import logging
 import os
-from sklearn.preprocessing import StandardScaler
-import dask
 import uuid
 
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
 from sqlalchemy.exc import SQLAlchemyError
-from src import server, sqlalchemy_db
 
-from schema_model import Dataset, EmbeddingResult, EmbeddingMethod, DimReductionResult, DimReductionMethod
+from src import server, sqlalchemy_db
+from src.schema_model import Dataset, EmbeddingResult, EmbeddingMethod, DimReductionResult, DimReductionMethod
 
 logger = logging.getLogger(__name__)
 
@@ -162,13 +161,13 @@ class BaseDimensionalityReduction:
 
 def get_dr_model(method_name: str, dask_client: dask.distributed.client.Client or None = None):
     if method_name == "pca":
-        from dimensionality_reduction.pca import PCA
+        from src.dimensionality_reduction.pca import PCA
         return PCA()
     elif method_name == "tsne":
-        from dimensionality_reduction.tsne import TSNE
+        from src.dimensionality_reduction.tsne import TSNE
         return TSNE()
     elif method_name == "umap_reducer":
-        from dimensionality_reduction.umap_reducer import UmapReducer
+        from src.dimensionality_reduction.umap_reducer import UmapReducer
         return UmapReducer()
     else:
         raise ValueError(f"Unknown DR method: {method_name}")

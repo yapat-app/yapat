@@ -1,7 +1,7 @@
 import dash_bootstrap_components as dbc
 from dash import callback, Input, Output
 
-from .login import login_info
+from src.components.login import login_info
 
 navbar = dbc.NavbarSimple(
     children=[

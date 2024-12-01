@@ -5,7 +5,8 @@ import librosa
 import numpy as np
 import pandas as pd
 
-from embeddings import _split_audio_into_chunks
+from src.embeddings import _split_audio_into_chunks
+from tests._paths import ROOT_PATH
 
 
 class TestSplitAudioChunks(unittest.TestCase):
