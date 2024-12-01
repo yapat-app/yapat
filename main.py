@@ -31,7 +31,7 @@ from src.pages.register import layout
 app.layout = layout
 # init data
 
-register_callbacks(app)
+register_callbacks()
 
 
 @server.before_request
