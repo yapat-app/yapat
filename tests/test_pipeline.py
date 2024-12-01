@@ -27,8 +27,7 @@ class TestDaskAudioPipeline(unittest.TestCase):
 
         for embedding_name in list_embeddings:
             with self.subTest(embedding_name=embedding_name):
-                embedding_object = get_embedding_model(embedding_name, dataset_name='test_dataset',
-                                                       dask_client=dask_client)
+                embedding_object = get_embedding_model(embedding_name, 'test_embedding_model', dask_client=dask_client)
                 with patch.object(embedding_object, 'get_path_dataset') as mock_get_path_dataset:
                     # Mock return value
                     mock_get_path_dataset.return_value = os.path.join('tests', 'assets', 'test_data')
@@ -37,9 +36,8 @@ class TestDaskAudioPipeline(unittest.TestCase):
 
             for clustering_name in list_clustering:
                 with self.subTest(embedding_name=embedding_name, clustering_name=clustering_name):
-                    embedding_object = get_embedding_model(embedding_name, dataset_name='test_dataset')
-                    clustering_object = get_clustering_model(clustering_name, dataset_name='test_dataset',
-                                                             embedding_method=embedding_name)
+                    embedding_object = get_embedding_model(embedding_name, 'test_dataset')
+                    clustering_object = get_clustering_model(clustering_name,)
 
                     with patch.object(embedding_object, 'get_path_dataset') as mock_get_path_dataset:
                         with patch.object(clustering_object, 'load_data') as mock_load_data:

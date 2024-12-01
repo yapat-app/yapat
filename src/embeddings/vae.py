@@ -55,7 +55,7 @@ class VAEEmbedding(BaseEmbedding):
             beta_kl=1,
             kw_spectrograms: dict or None = None
     ):
-        super().__init__(dataset_name, clip_duration, model_path, sampling_rate, dask_client)
+        super().__init__(clip_duration, model_path, sampling_rate, dask_client)
         self.learning_rate = learning_rate
         self.epochs = epochs
         self.batch_size = batch_size
