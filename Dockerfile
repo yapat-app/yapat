@@ -1,17 +1,41 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
-COPY requirements.txt /
+RUN \
+    apt-get update && \
+    apt-get install --yes pkg-config libhdf5-dev git &&  \
+    rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y pkg-config libhdf5-dev && rm -rf /var/lib/apt/lists/* \
+WORKDIR /app
 
-RUN pip install -r /requirements.txt && rm -rf /root/.cache
+RUN \
+    git clone https://github.com/gregversteeg/NPEET.git &&  \
+    pip install ./NPEET && \
+    rm -rf NPEET
 
-COPY src/ ./
+RUN \
+    apt-get remove --yes pkg-config libhdf5-dev git
 
-RUN mkdir -p ./data ./projects ./instance
+COPY requirements.txt .
 
-ENV ENVIRONMENT_FILE=".env"
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY src src
+
+RUN \
+    mkdir data || true && \
+    mkdir projects || true && \
+    mkdir instance || true && \
+    mkdir embeddings || true && \
+    mkdir clustering || true && \
+    mkdir dimensionality_reduction || true
+
+ENV ENVIRONMENT_FILE="src/.env"
 
 EXPOSE 1050
 
-ENTRYPOINT ["gunicorn", "--config", "gunicorn_config.py", "app:server"]
+ENV PYTHONPATH=.
+
+# TODO Is not reacheable
+# ENTRYPOINT ["gunicorn", "--config", "src/gunicorn_config.py", "src.app:server"]
+# TODO Is not reacheable
+ENTRYPOINT ["python", "src/app.py"]
