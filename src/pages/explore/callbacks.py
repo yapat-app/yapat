@@ -238,11 +238,6 @@ def update_visualization_content(active_tab, figures_data):
     return figure_component, ""
 
 
-
-
-
-
-
 @callback(
     Output("create-pipeline-msg", "children"),
     Input("create-pipeline", "n_clicks"),
