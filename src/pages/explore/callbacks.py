@@ -1,6 +1,6 @@
 import os
 import json
-from dash import Input, Output, State, callback, callback_context, dcc, html
+from dash import dcc, html
 
 from src.utils import get_embedding_model
 from src.clustering import get_clustering_model
