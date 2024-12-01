@@ -38,6 +38,7 @@ def create_app(name='yapat', server=server, title='YAPAT | Yet Another PAM Annot
     """Create the Dash app and link it to Flask."""
     app = Dash(
         name=name,
+        pages_folder="",
         server=server,
         use_pages=True,
         external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
