@@ -292,4 +292,3 @@ def get_embedding_model(method_name, *args, **kwargs):
 
     else:
         raise ValueError(f"Unknown embedding method: {method_name}")
-
