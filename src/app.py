@@ -123,9 +123,8 @@ def register_user(n_clicks, username, password):
     return ""
 
 
-# Prevent app from running on Dask workers by using a main check
-if __name__ == "__main__":
-
+def main():
+    global dask_client  # TODO Avoid global variables
     dask_client_address = {"host": "localhost", "port": 8687}
     if check_socket(**dask_client_address):
         dask_client = Client(address=f"{dask_client_address.get('host')}:{dask_client_address.get('port')}")
@@ -135,15 +134,12 @@ if __name__ == "__main__":
                                dashboard_address=':8787')
         dask_client = Client(cluster)
         logger.info("Created new Dask client")
-
     # Only initialize the Dash app if this script is the entry point
     app = create_app()
-
     # Initialize extensions with the app
     sqlalchemy_db.init_app(server)
     login_manager.init_app(server)
     login_manager.login_view = 'login'
-
     # Any additional initialization (such as database operations) should be kept in the main block
     with server.app_context():
         sqlalchemy_db.create_all(bind_key=['user_db', 'pipeline_db'])  # Create tables
@@ -154,7 +150,6 @@ if __name__ == "__main__":
         except SQLAlchemyError as e:
             sqlalchemy_db.session.rollback()
             logger.exception(e)
-
     # Run the Dash app
     app.run_server(
         host=APP_HOST,
@@ -162,3 +157,8 @@ if __name__ == "__main__":
         debug=APP_DEBUG,
         dev_tools_props_check=DEV_TOOLS_PROPS_CHECK
     )
+
+
+# Prevent app from running on Dask workers by using a main check
+if __name__ == "__main__":
+    main()
