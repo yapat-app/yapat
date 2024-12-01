@@ -26,8 +26,8 @@ def update_database_embedding_result(
 
     url_db = 'sqlite:///instance/pipeline_data.db'  # Adjust as necessary
     engine = create_engine(url_db)
-    Session = sessionmaker(bind=engine)
-    with Session() as session:
+    session = sessionmaker(bind=engine)
+    with session() as session:
         try:
             # Fetch task state and other identifiers from the database
             dataset_id = session.execute(
