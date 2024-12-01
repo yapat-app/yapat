@@ -10,10 +10,10 @@ logger = logging.getLogger(__name__)
 
 def create_server():
     # Create the Flask app
-    server = Flask('yapat')
+    _server = Flask('yapat')
 
     # Configure Flask server
-    server.config.update(
+    _server.config.update(
         SECRET_KEY=os.getenv('SECRET_KEY'),
         SQLALCHEMY_DATABASE_URI='sqlite:///main.db',
         SQLALCHEMY_BINDS={
@@ -24,11 +24,11 @@ def create_server():
     )
 
     # Initialize extensions with the app
-    sqlalchemy_db.init_app(server)
-    login_manager.init_app(server)
+    sqlalchemy_db.init_app(_server)
+    login_manager.init_app(_server)
     login_manager.login_view = 'login'
 
-    return server
+    return _server
 
 
 server = create_server()
