@@ -25,6 +25,8 @@ class TestDaskAudioPipeline(unittest.TestCase):
         future_embeddings_for_clustering = {}
         future_clustering = {}
 
+        dask_client = get_dask_client()
+
         for embedding_name in list_embeddings:
             with self.subTest(embedding_name=embedding_name):
                 embedding_object = get_embedding_model(embedding_name, 'test_embedding_model', dask_client=dask_client)
