@@ -21,8 +21,8 @@ dash.register_page(
 
 
 @login_required_layout
-def layout():
-    layout = dbc.Container([
+def layout() -> dbc.Container:
+    _layout: dbc.Container = dbc.Container([
         html.Div([
             # Header
             dbc.Row([
@@ -95,4 +95,4 @@ def layout():
             ])
         ])
     ])
-    return layout
+    return _layout
