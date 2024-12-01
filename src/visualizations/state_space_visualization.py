@@ -24,5 +24,3 @@ class StateSpaceVis(BaseVisualization):
         )
 
         return fig
-
-

@@ -33,5 +33,3 @@ class RosePlot(BaseVisualization):
             title='Cluster Rose Plot'
         )
         return fig
-
-
