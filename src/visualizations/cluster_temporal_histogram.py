@@ -36,10 +36,3 @@ class ClusterTemporalHist(BaseVisualization):
                               'Cluster Label': 'Cluster'}, )
         fig.update_layout(xaxis_title=self.average_based.capitalize(), yaxis_title='Occurrences')
         return fig
-
-
-
-
-
-
-

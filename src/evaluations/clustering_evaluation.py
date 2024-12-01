@@ -26,10 +26,3 @@ class ClusteringEvaluation(BaseEvaluation):
         }
         self.save_results('clusters', evaluation_results)
         return
-
-
-
-
-
-
-

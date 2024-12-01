@@ -31,6 +31,3 @@ class ClusterTimeGrid(BaseVisualization):
         fig.update_traces(marker=dict(size=10))
         fig.update_yaxes(autorange="reversed")
         return fig
-
-
-
