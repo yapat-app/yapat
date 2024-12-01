@@ -67,6 +67,8 @@ class TestBaseEmbedding(unittest.TestCase):
     def test_read_audio_dataset_with_dask(self, mock_get_path_dataset):
         """Test read_audio_dataset for local processing without Dask."""
 
+        dask_client = get_dask_client()
+
         instance = BaseEmbedding(
             model_path=self.model_path,
             clip_duration=self.clip_duration,
