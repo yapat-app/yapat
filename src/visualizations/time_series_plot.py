@@ -59,4 +59,3 @@ class TimeSeries(BaseVisualization):
 
         fig.update_layout(title=f'{y_variables_str} over Time with {self.resolution} resolution')
         return fig
-
