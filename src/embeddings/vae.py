@@ -115,7 +115,6 @@ class VAEEmbedding(BaseEmbedding):
                 self.kw_spectrograms.get('resolution') * (1 - self.kw_spectrograms.get('overlap')))), 1)
         self.model = VAE(input_shape=input_shape, latent_dim=self.latent_dim, beta_kl=self.beta_kl)
         self.model.compile(tf.keras.optimizers.Adam(learning_rate=self.learning_rate))
-        return
 
     def train_model(self):
         if self.model is None:
