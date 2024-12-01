@@ -56,11 +56,14 @@ def initialize_session():
         }
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description='Generate detections')
     parser.add_argument("--port", type=str, default="1050", help="Port to listen on")
-    parser.add_argument("--host", type=str, default="localhost", help="Host to listen")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to listen on")
     args = parser.parse_args()
-
-    # run dashbord for annotation
+    # run dashboard for annotation
     app.run_server(debug=False, host=args.host, port=args.port)
+
+
+if __name__ == '__main__':
+    main()
