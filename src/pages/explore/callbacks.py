@@ -15,7 +15,8 @@ from src.visualizations.rose_plot import RosePlot
 from dash import Input, Output, State, callback, callback_context
 
 from src.extensions import sqlalchemy_db
-from src.schema_model import ClusteringMethod, EmbeddingMethod, DimReductionMethod, Dataset
+from src.schema_model import ClusteringMethod, EmbeddingMethod, DimReductionMethod, Dataset, EmbeddingResult, \
+    ClusteringResult
 
 pipeline_steps = {
     'embeddings': EmbeddingMethod,
