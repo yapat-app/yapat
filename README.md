@@ -46,3 +46,9 @@ PORT=1050 PYTHONPATH=. venv/bin/python src/app.py
 ## Open the application
 
 -   Open <http://localhost:1050>
+
+## Build the Docker image
+
+```bash
+docker build --check .
+```
