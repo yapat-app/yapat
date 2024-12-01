@@ -4,10 +4,7 @@ from src.visualizations import BaseVisualization
 
 
 class StateSpaceVis(BaseVisualization):
-
     def __init__(self, embedding_method, clustering_method, dim_reduction_method):
-
-
         super().__init__(embedding_method, clustering_method, dim_reduction_method)
 
     def plot(self):
@@ -24,5 +21,3 @@ class StateSpaceVis(BaseVisualization):
         )
 
         return fig
-
-
