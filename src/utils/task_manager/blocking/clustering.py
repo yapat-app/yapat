@@ -8,8 +8,8 @@ from sqlalchemy import create_engine, select, and_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
-from clustering import get_clustering_model
-from schema_model import EmbeddingResult, Dataset, ClusteringResult, ClusteringMethod
+from src.clustering import get_clustering_model
+from src.schema_model import EmbeddingResult, Dataset, ClusteringResult, ClusteringMethod
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -26,8 +26,8 @@ def update_database_clustering_result(
     # Connect to the database
     url_db = 'sqlite:///instance/pipeline_data.db'  # Adjust as necessary
     engine = create_engine(url_db)
-    Session = sessionmaker(bind=engine)
-    with Session() as session:
+    session = sessionmaker(bind=engine)
+    with session() as session:
         try:
             method_id = session.execute(
                 select(ClusteringMethod.id).where(ClusteringMethod.method_name == clustering_method)
@@ -82,7 +82,7 @@ def _get_pickled_embeddings(dataset_id, embedding_id):
 def compute_clusters(dataset_name, list_clustering_methods):
     print(f"Computing clusters for dataset: '{dataset_name}'")
     df_embedding_results = _get_embedding_results(dataset_name=dataset_name)
-    for id, embedding_result in df_embedding_results.iterrows():
+    for embedding_method_id, embedding_result in df_embedding_results.iterrows():
         print(f"Computing clusters for embedding method id: {embedding_result.embedding_id}")
         embeddings = _get_pickled_embeddings(dataset_id=embedding_result.dataset_id,
                                              embedding_id=embedding_result.embedding_id)
@@ -92,10 +92,10 @@ def compute_clusters(dataset_name, list_clustering_methods):
             cluster_instance.fit_predict()
         #     # raise NotImplementedError
 
-            filepath = os.path.join('instance', 'clusters', f'{id}_{clustering_method}_{uuid.uuid4()}.pkl')
+            filepath = os.path.join('instance', 'clusters', f'{embedding_method_id}_{clustering_method}_{uuid.uuid4()}.pkl')
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
             cluster_instance.labels.to_pickle(filepath)
-            update_database_clustering_result(embedding_result_id=id, clustering_method=clustering_method,
+            update_database_clustering_result(embedding_result_id=embedding_method_id, clustering_method=clustering_method,
                                               filepath=filepath,
                                               task_key=None, task_state='completed')
     print(f"Finished computing clusters for dataset {dataset_name}")

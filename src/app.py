@@ -1,3 +1,5 @@
+import os
+import random
 import logging
 
 import dash
@@ -6,16 +8,27 @@ from dash import html, dcc, callback, Output, Input, State, Dash
 from dash.exceptions import PreventUpdate
 from dask.distributed import Client
 from distributed import LocalCluster
+from flask import Flask
 from flask_login import login_user
 from sqlalchemy.exc import SQLAlchemyError
 
-from components import navbar, footer
-from components.login import login_location
-from pages.explore.callbacks import update_db_methods
-from schema_model import User
-from extensions import login_manager, sqlalchemy_db
-from utils import check_socket, server
-from utils.settings import APP_HOST, APP_PORT, APP_DEBUG, DEV_TOOLS_PROPS_CHECK
+from src.components import navbar, footer
+from src.components.login import login_location
+from src.pages.explore.callbacks import update_db_methods
+from src.schema_model import User
+from src.extensions import login_manager, sqlalchemy_db
+from src.utils import check_socket
+from src.utils.settings import APP_HOST, APP_PORT, APP_DEBUG, DEV_TOOLS_PROPS_CHECK
+
+server = Flask(__name__)
+server.config.update(SECRET_KEY=os.getenv('SECRET_KEY'))
+server.config.update(SQLALCHEMY_DATABASE_URI='sqlite:///users.db')
+server.config.update(SQLALCHEMY_TRACK_MODIFICATIONS=False)
+server.config.update(SQLALCHEMY_BINDS={
+    'user_db': 'sqlite:///user_management.db',
+    'pipeline_db': 'sqlite:///pipeline_data.db'
+})
+server.secret_key = str(random.randint(a=0, b=1000000))
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -25,6 +38,7 @@ def create_app(name='yapat', server=server, title='YAPAT | Yet Another PAM Annot
     """Create the Dash app and link it to Flask."""
     app = Dash(
         name=name,
+        pages_folder="",
         server=server,
         use_pages=True,
         external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
@@ -109,9 +123,8 @@ def register_user(n_clicks, username, password):
     return ""
 
 
-# Prevent app from running on Dask workers by using a main check
-if __name__ == "__main__":
-
+def main():
+    global dask_client  # TODO Avoid global variables
     dask_client_address = {"host": "localhost", "port": 8687}
     if check_socket(**dask_client_address):
         dask_client = Client(address=f"{dask_client_address.get('host')}:{dask_client_address.get('port')}")
@@ -121,15 +134,12 @@ if __name__ == "__main__":
                                dashboard_address=':8787')
         dask_client = Client(cluster)
         logger.info("Created new Dask client")
-
     # Only initialize the Dash app if this script is the entry point
     app = create_app()
-
     # Initialize extensions with the app
     sqlalchemy_db.init_app(server)
     login_manager.init_app(server)
     login_manager.login_view = 'login'
-
     # Any additional initialization (such as database operations) should be kept in the main block
     with server.app_context():
         sqlalchemy_db.create_all(bind_key=['user_db', 'pipeline_db'])  # Create tables
@@ -140,7 +150,6 @@ if __name__ == "__main__":
         except SQLAlchemyError as e:
             sqlalchemy_db.session.rollback()
             logger.exception(e)
-
     # Run the Dash app
     app.run_server(
         host=APP_HOST,
@@ -148,3 +157,8 @@ if __name__ == "__main__":
         debug=APP_DEBUG,
         dev_tools_props_check=DEV_TOOLS_PROPS_CHECK
     )
+
+
+# Prevent app from running on Dask workers by using a main check
+if __name__ == "__main__":
+    main()

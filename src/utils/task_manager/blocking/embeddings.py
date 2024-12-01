@@ -3,14 +3,12 @@ import os
 import uuid
 from typing import Union
 
-import pandas as pd
 from sqlalchemy import create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
-from clustering import get_clustering_model
-from schema_model import EmbeddingResult, Dataset, EmbeddingMethod
-from utils import get_embedding_model
+from src.schema_model import EmbeddingResult, Dataset, EmbeddingMethod
+from src.utils import get_embedding_model
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -28,8 +26,8 @@ def update_database_embedding_result(
 
     url_db = 'sqlite:///instance/pipeline_data.db'  # Adjust as necessary
     engine = create_engine(url_db)
-    Session = sessionmaker(bind=engine)
-    with Session() as session:
+    session = sessionmaker(bind=engine)
+    with session() as session:
         try:
             # Fetch task state and other identifiers from the database
             dataset_id = session.execute(

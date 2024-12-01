@@ -1,21 +1,44 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
-COPY requirements.txt /
+RUN \
+    apt-get update && \
+    apt-get install --yes pkg-config libhdf5-dev git &&  \
+    rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y pkg-config libhdf5-dev git && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
 
-RUN pip install -r /requirements.txt && rm -rf /root/.cache
+RUN \
+    git clone https://github.com/gregversteeg/NPEET.git &&  \
+    pip install ./NPEET && \
+    rm -rf NPEET
 
-RUN git clone https://github.com/gregversteeg/NPEET.git && pip install ./NPEET
+RUN \
+    apt-get remove --yes pkg-config libhdf5-dev git
 
-WORKDIR /
+COPY requirements.txt .
 
-COPY src/ ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY src/ ./src
 
 RUN mkdir -p ./instance
+RUN mkdir -p ./embeddings
+RUN mkdir -p ./clustering
+RUN mkdir -p ./dimensionality_reduction
 
-ENV ENVIRONMENT_FILE=".env"
+ENV ENVIRONMENT_FILE="src/.env"
 
 EXPOSE 1050
 
-ENTRYPOINT ["gunicorn", "--config", "gunicorn_config.py", "app:server"]
+COPY main.py .
+
+ENV PYTHONPATH=.
+
+# Reachable from outside the container.
+ENTRYPOINT ["python", "main.py"]
+# ENTRYPOINT ["gunicorn", "main:main"]  # Not reachable from outside the container.
+# ENTRYPOINT ["gunicorn", "--config", "src/gunicorn_config.py", "main:main"]  # Not reachable from outside the container.
+
+# ENTRYPOINT ["python", "src/app.py"]  # Not reachable from outside the container.
+# ENTRYPOINT ["gunicorn", "src.app:main"]  # Not reachable from outside the container.
+# ENTRYPOINT ["gunicorn", "--config", "src/gunicorn_config.py", "src/app:main"]  # Not reachable from outside the container.

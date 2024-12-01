@@ -11,8 +11,8 @@ from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound, SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
-from schema_model import Dataset
-from utils import glob_audio_dataset
+from src.schema_model import Dataset
+from src.utils import glob_audio_dataset
 
 logger = logging.getLogger(__name__)
 
@@ -241,7 +241,7 @@ class BaseEmbedding:
 
         try:
             # Add metadata to the EmbeddingResult table
-            from schema_model import EmbeddingResult
+            from src.schema_model import EmbeddingResult
             embedding_result = EmbeddingResult(
                 dataset_id=dataset_id,
                 embedding_id=embedding_id,
@@ -251,7 +251,7 @@ class BaseEmbedding:
                 created_at=pd.Timestamp.now(),
                 task='completed'
             )
-            from extensions import sqlalchemy_db
+            from src.extensions import sqlalchemy_db
             sqlalchemy_db.session.add(embedding_result)
             sqlalchemy_db.session.commit()
             logger.info(f"Embedding metadata saved to the database for dataset {dataset_id}")

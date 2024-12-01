@@ -7,11 +7,12 @@ import dash
 # import dash_auth
 import dash_bootstrap_components as dbc
 from flask import Flask, session
+from src.pages.annotate.callbacks import register_callbacks
 
 sys.path.append(os.path.dirname(__file__))
 
-from src.callbacks import register_callbacks
-from src.layout import layout
+# from src.callbacks import register_callbacks
+# from src.layout import layout
 
 # from flask_session import Session
 
@@ -34,10 +35,10 @@ app = dash.Dash(
 # server = app.server
 app.title = 'YAPAT | Yet Another PAM Annotation Tool'
 
+from src.pages.register import layout
 app.layout = layout
-# init data
 
-register_callbacks(app)
+register_callbacks()
 
 
 @server.before_request
@@ -55,11 +56,14 @@ def initialize_session():
         }
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description='Generate detections')
     parser.add_argument("--port", type=str, default="1050", help="Port to listen on")
-    parser.add_argument("--host", type=str, default="localhost", help="Host to listen")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to listen on")
     args = parser.parse_args()
-
-    # run dashbord for annotation
+    # run dashboard for annotation
     app.run_server(debug=False, host=args.host, port=args.port)
+
+
+if __name__ == '__main__':
+    main()

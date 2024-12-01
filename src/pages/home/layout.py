@@ -4,10 +4,10 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import html
 
-from pages.home import callbacks
+# from src.pages.home import callbacks
 # from .callbacks import scan_projects
-from pages import login_required_layout
-from pages.explore.callbacks import list_existing_methods
+from src.pages import login_required_layout
+from src.pages.explore.callbacks import list_existing_methods
 
 
 logger = logging.getLogger(__name__)
@@ -21,8 +21,8 @@ dash.register_page(
 
 
 @login_required_layout
-def layout():
-    layout = dbc.Container([
+def layout() -> dbc.Container:
+    _layout: dbc.Container = dbc.Container([
         html.Div([
             # Header
             dbc.Row([
@@ -95,4 +95,4 @@ def layout():
             ])
         ])
     ])
-    return layout
+    return _layout
