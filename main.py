@@ -11,8 +11,8 @@ from src.pages.annotate.callbacks import register_callbacks
 
 sys.path.append(os.path.dirname(__file__))
 
-from src.callbacks import register_callbacks
-from src.layout import layout
+# from src.callbacks import register_callbacks
+# from src.layout import layout
 
 # from flask_session import Session
 
