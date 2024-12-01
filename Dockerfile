@@ -6,7 +6,10 @@ RUN apt-get update && apt-get install -y pkg-config libhdf5-dev git && rm -rf /v
 
 RUN pip install -r /requirements.txt && rm -rf /root/.cache
 
-RUN git clone https://github.com/gregversteeg/NPEET.git && pip install ./NPEET
+RUN \
+    git clone https://github.com/gregversteeg/NPEET.git &&  \
+    pip install ./NPEET && \
+    rm -rf NPEET
 
 WORKDIR /
 
