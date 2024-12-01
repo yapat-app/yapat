@@ -8,16 +8,17 @@ from dash import html, dcc, callback, Output, Input, State, Dash
 from dash.exceptions import PreventUpdate
 from dask.distributed import Client
 from distributed import LocalCluster
+from flask import Flask
 from flask_login import login_user
 from sqlalchemy.exc import SQLAlchemyError
 
-from components import navbar, footer
-from components.login import login_location
-from pages.explore.callbacks import update_db_methods
-from schema_model import User
-from extensions import login_manager, sqlalchemy_db
-from utils import check_socket, server
-from utils.settings import APP_HOST, APP_PORT, APP_DEBUG, DEV_TOOLS_PROPS_CHECK
+from src.components import navbar, footer
+from src.components.login import login_location
+from src.pages.explore.callbacks import update_db_methods
+from src.schema_model import User
+from src.extensions import login_manager, sqlalchemy_db
+from src.utils import check_socket
+from src.utils.settings import APP_HOST, APP_PORT, APP_DEBUG, DEV_TOOLS_PROPS_CHECK
 
 server = Flask(__name__)
 server.config.update(SECRET_KEY=os.getenv('SECRET_KEY'))

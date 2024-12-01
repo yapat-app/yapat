@@ -1,4 +1,3 @@
-import glob
 import logging
 import os
 from datetime import datetime
@@ -10,13 +9,13 @@ import pandas as pd
 import tensorflow as tf
 from dash import html, callback, Input, Output, State
 
-from pages.explore.callbacks import list_existing_datasets
-from pages.home import register_dataset
-from schema_model import Dataset
+from src.pages.explore.callbacks import list_existing_datasets
+from src.pages.home import register_dataset
+from src.schema_model import Dataset
 from sqlalchemy.exc import SQLAlchemyError
 
-from extensions import sqlalchemy_db
-from utils import glob_audio_dataset, server
+from src.extensions import sqlalchemy_db
+from src.utils import glob_audio_dataset, server
 
 logger = logging.getLogger(__name__)
 

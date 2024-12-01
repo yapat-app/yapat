@@ -7,6 +7,7 @@ import dash
 # import dash_auth
 import dash_bootstrap_components as dbc
 from flask import Flask, session
+from src.pages.annotate.callbacks import register_callbacks
 
 sys.path.append(os.path.dirname(__file__))
 

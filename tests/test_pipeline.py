@@ -3,9 +3,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from clustering import get_clustering_model
-from embeddings import get_embedding_model
-from extensions import dask_client
+from src.clustering import get_clustering_model
+# from src.extensions import dask_client
+from src.utils import get_embedding_model
 
 
 class TestDaskAudioPipeline(unittest.TestCase):

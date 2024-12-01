@@ -3,14 +3,12 @@ import os
 import uuid
 from typing import Union
 
-import pandas as pd
 from sqlalchemy import create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
-from clustering import get_clustering_model
-from schema_model import EmbeddingResult, Dataset, EmbeddingMethod
-from utils import get_embedding_model
+from src.schema_model import EmbeddingResult, Dataset, EmbeddingMethod
+from src.utils import get_embedding_model
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
