@@ -1,10 +1,11 @@
 FROM python:3.11-slim
 
+RUN apt-get update && apt-get install -y pkg-config libhdf5-dev git && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt /
 
 RUN pip install --no-cache-dir -r /requirements.txt
 
-RUN pip install -r /requirements.txt && rm -rf /root/.cache
 
 RUN \
     git clone https://github.com/gregversteeg/NPEET.git &&  \
