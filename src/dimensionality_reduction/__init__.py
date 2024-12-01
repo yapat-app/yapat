@@ -160,7 +160,8 @@ class BaseDimensionalityReduction:
             raise Exception(f"Error saving dimensionality reduction results: {e}")
 
 
-def get_dr_model(method_name: str, dask_client: dask.distributed.client.Client or None = None):
+def get_dr_model(method_name: str):
+    # dask_client: dask.distributed.client.Client or None = None
     if method_name == "pca":
         from src.dimensionality_reduction.pca import PCA
         return PCA()
