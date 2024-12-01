@@ -22,6 +22,15 @@ python3.12 -m venv venv
 venv/bin/python -m pip install --upgrade pip
 ```
 
+## Install NPEET
+
+```bash
+git clone https://github.com/gregversteeg/NPEET.git || true &&
+cd NPEET &&
+../venv/bin/python -m pip install . &&
+cd -
+```
+
 ## Install dependencies
 
 ```bash
