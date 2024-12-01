@@ -34,7 +34,7 @@ cd -
 ## Install dependencies
 
 ```bash
-pip install yapat
+venv/bin/python -m pip install --upgrade yapat dask[distributed]
 ```
 
 ## Run the application
