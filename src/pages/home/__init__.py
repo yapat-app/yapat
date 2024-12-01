@@ -2,7 +2,7 @@ import logging
 
 from sqlalchemy.exc import SQLAlchemyError
 
-from schema_model import Dataset
+from src.schema_model import Dataset
 from src import sqlalchemy_db
 
 logger = logging.getLogger(__name__)

@@ -1,7 +1,7 @@
 from sklearn.cluster import DBSCAN
 import pandas as pd
 
-from clustering import BaseClustering
+from src.clustering import BaseClustering
 
 class DBSCANClustering(BaseClustering):
     """

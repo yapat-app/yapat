@@ -1,5 +1,6 @@
 import pandas as pd
-from dimensionality_reduction import BaseDimensionalityReduction
+from src.dimensionality_reduction import BaseDimensionalityReduction
+
 
 class UmapReducer(BaseDimensionalityReduction):
 

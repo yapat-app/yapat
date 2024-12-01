@@ -2,8 +2,8 @@ import os
 import unittest
 from unittest.mock import patch
 
-from embeddings import BaseEmbedding
-from extensions import dask_client
+from src.embeddings import BaseEmbedding
+from src.extensions import get_dask_client
 
 
 class TestBaseEmbedding(unittest.TestCase):
@@ -16,7 +16,6 @@ class TestBaseEmbedding(unittest.TestCase):
         self.clip_duration = 2.5
         self.dask_client = None
         self.base_embedding = BaseEmbedding(
-            dataset_name=self.dataset_name,
             model_path=self.model_path,
             clip_duration=self.clip_duration,
             sampling_rate=self.sample_rate,
@@ -25,7 +24,6 @@ class TestBaseEmbedding(unittest.TestCase):
 
     def test_initialization(self):
         """Test that the BaseEmbedding class initializes with correct attributes."""
-        self.assertEqual(self.base_embedding.dataset_name, self.dataset_name)
         self.assertEqual(self.base_embedding.clip_duration, self.clip_duration)
         self.assertEqual(self.base_embedding.model_path, self.model_path)
         self.assertEqual(self.base_embedding.sampling_rate, self.sample_rate)
@@ -41,7 +39,7 @@ class TestBaseEmbedding(unittest.TestCase):
     def test_process_not_implemented(self):
         """Test that process raises NotImplementedError if not overridden."""
         with self.assertRaises(NotImplementedError):
-            self.base_embedding.process([])  # Passing dummy list of audio files
+            self.base_embedding.process()  # Passing dummy list of audio files
 
     @patch.object(BaseEmbedding, 'get_path_dataset')
     def test_get_path_dataset(self, mock_get_path_dataset):
@@ -69,8 +67,9 @@ class TestBaseEmbedding(unittest.TestCase):
     def test_read_audio_dataset_with_dask(self, mock_get_path_dataset):
         """Test read_audio_dataset for local processing without Dask."""
 
+        dask_client = get_dask_client()
+
         instance = BaseEmbedding(
-            dataset_name=self.dataset_name,
             model_path=self.model_path,
             clip_duration=self.clip_duration,
             sampling_rate=self.sample_rate,

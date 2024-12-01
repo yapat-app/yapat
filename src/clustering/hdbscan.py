@@ -1,7 +1,8 @@
 from sklearn.cluster import HDBSCAN
 import pandas as pd
 
-from clustering import BaseClustering
+from src.clustering import BaseClustering
+
 
 class HDBSCANClustering(BaseClustering):
     """

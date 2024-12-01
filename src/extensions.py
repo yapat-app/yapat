@@ -4,7 +4,7 @@ from dask.distributed import LocalCluster, Client, get_worker
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 
-from utils import check_socket
+from src.utils import check_socket
 
 logger = logging.getLogger(__name__)
 
@@ -16,10 +16,11 @@ sqlalchemy_db = SQLAlchemy()
 # This will manage user session handling, such as login and logout.
 login_manager = LoginManager()
 
-if __name__ == 'extensions':
+
+def get_dask_client():
+    global dask_client
     host = 'localhost'
     port = 8786
-
     if check_socket(host, port):
         dask_client = Client(":".join([host, str(port)]))
         logger.info("Connected to existing Dask client")
@@ -27,3 +28,9 @@ if __name__ == 'extensions':
         cluster = LocalCluster(name='yapat_dask', n_workers=4, scheduler_port=port, dashboard_address=':8787')
         dask_client = Client(cluster)
         logger.info("Created new Dask client")
+
+    return dask_client
+
+
+if __name__ == 'extensions':
+    get_dask_client()

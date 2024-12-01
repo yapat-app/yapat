@@ -13,7 +13,7 @@ from maad.sound import spectrogram
 from scipy.io.wavfile import write
 from scipy.signal import butter, lfilter
 
-from .sampling import get_sample, process_annotation, replenish_queue
+from src.pages.annotate.sampling import get_sample, process_annotation, replenish_queue
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 from sklearn.decomposition import PCA
 from sklearn.svm import SVC
@@ -7,7 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score, mean_squared_error, accuracy_score
 from npeet.entropy_estimators import entropy as calculate_entropy
 
-from evaluations import BaseEvaluation
+from src.evaluations import BaseEvaluation
 
 
 class EmbeddingsEvaluation(BaseEvaluation):

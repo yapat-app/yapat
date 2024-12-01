@@ -1,7 +1,8 @@
 import plotly.express as px
 import pandas as pd
 
-from visualizations import BaseVisualization
+from src.visualizations import BaseVisualization
+
 
 class RosePlot(BaseVisualization):
 
@@ -32,5 +33,3 @@ class RosePlot(BaseVisualization):
             title='Cluster Rose Plot'
         )
         return fig
-
-

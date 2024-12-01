@@ -1,9 +1,9 @@
 import pandas as pd
 from datetime import datetime
-import plotly.graph_objects as go
 import plotly.express as px
 
-from visualizations import BaseVisualization
+from src.visualizations import BaseVisualization
+
 
 class ClusterTemporalHist(BaseVisualization):
 
@@ -36,10 +36,3 @@ class ClusterTemporalHist(BaseVisualization):
                               'Cluster Label': 'Cluster'}, )
         fig.update_layout(xaxis_title=self.average_based.capitalize(), yaxis_title='Occurrences')
         return fig
-
-
-
-
-
-
-

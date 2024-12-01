@@ -3,9 +3,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from clustering import get_clustering_model
-from embeddings import get_embedding_model
-from extensions import dask_client
+from src.clustering import get_clustering_model
+from src.embeddings import get_embedding_model
+from src.extensions import get_dask_client
 
 
 class TestDaskAudioPipeline(unittest.TestCase):
@@ -25,10 +25,11 @@ class TestDaskAudioPipeline(unittest.TestCase):
         future_embeddings_for_clustering = {}
         future_clustering = {}
 
+        dask_client = get_dask_client()
+
         for embedding_name in list_embeddings:
             with self.subTest(embedding_name=embedding_name):
-                embedding_object = get_embedding_model(embedding_name, dataset_name='test_dataset',
-                                                       dask_client=dask_client)
+                embedding_object = get_embedding_model(embedding_name, 'test_embedding_model', dask_client=dask_client)
                 with patch.object(embedding_object, 'get_path_dataset') as mock_get_path_dataset:
                     # Mock return value
                     mock_get_path_dataset.return_value = os.path.join('tests', 'assets', 'test_data')
@@ -37,9 +38,8 @@ class TestDaskAudioPipeline(unittest.TestCase):
 
             for clustering_name in list_clustering:
                 with self.subTest(embedding_name=embedding_name, clustering_name=clustering_name):
-                    embedding_object = get_embedding_model(embedding_name, dataset_name='test_dataset')
-                    clustering_object = get_clustering_model(clustering_name, dataset_name='test_dataset',
-                                                             embedding_method=embedding_name)
+                    embedding_object = get_embedding_model(embedding_name, 'test_dataset')
+                    clustering_object = get_clustering_model(clustering_name,)
 
                     with patch.object(embedding_object, 'get_path_dataset') as mock_get_path_dataset:
                         with patch.object(clustering_object, 'load_data') as mock_load_data:
@@ -54,7 +54,7 @@ class TestDaskAudioPipeline(unittest.TestCase):
                             # TODO Decide whether saving to disk happens inside embedding_object,
                             #  or inside a wrapper function such as
                             #  src.utils.embeddings.compute_embeddings(dataset_name, embeddings_name)
-                            future_clustering[clustering_name] = dask_client.submit(NotImplemented)
+                            future_clustering[clustering_name] = dask_client.submit(print)
 
 
 if __name__ == '__main__':

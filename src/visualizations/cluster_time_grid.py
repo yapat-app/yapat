@@ -1,7 +1,8 @@
 import plotly.express as px
 import pandas as pd
 
-from visualizations import BaseVisualization
+from src.visualizations import BaseVisualization
+
 
 class ClusterTimeGrid(BaseVisualization):
 
@@ -30,6 +31,3 @@ class ClusterTimeGrid(BaseVisualization):
         fig.update_traces(marker=dict(size=10))
         fig.update_yaxes(autorange="reversed")
         return fig
-
-
-

@@ -7,12 +7,12 @@ from dash.exceptions import PreventUpdate
 from flask_login import login_user
 from sqlalchemy.exc import SQLAlchemyError
 
-from components import navbar, footer
-from components.login import login_location
-from schema_model import User
+from src.components import navbar, footer
+from src.components.login import login_location
+from src.schema_model import User
 from src import login_manager, sqlalchemy_db, server
-from pages.explore.callbacks import update_db_methods
-from utils.settings import APP_HOST, APP_PORT, APP_DEBUG, DEV_TOOLS_PROPS_CHECK
+from src.pages.explore.callbacks import update_db_methods
+from src.utils.settings import APP_HOST, APP_PORT, APP_DEBUG, DEV_TOOLS_PROPS_CHECK
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +21,7 @@ def create_app(name='yapat', server=server, title='YAPAT | Yet Another PAM Annot
     """Create the Dash app and link it to Flask."""
     app = Dash(
         name=name,
+        pages_folder="",
         server=server,
         use_pages=True,
         external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],

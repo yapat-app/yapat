@@ -1,7 +1,8 @@
 from sklearn.cluster import KMeans
 import pandas as pd
 
-from clustering import BaseClustering
+from src.clustering import BaseClustering
+
 
 class KMeansClustering(BaseClustering):
     """

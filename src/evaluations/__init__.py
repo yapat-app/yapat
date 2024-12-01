@@ -2,12 +2,12 @@ import pandas as pd
 import json
 import logging
 import os
-import dask
-from sklearn.preprocessing import StandardScaler
 
+from sklearn.preprocessing import StandardScaler
 from sqlalchemy.exc import SQLAlchemyError
+
 from src import server, sqlalchemy_db
-from schema_model import Dataset, EmbeddingResult, EmbeddingMethod, ClusteringMethod, ClusteringResult, DimReductionResult, DimReductionMethod
+from src.schema_model import Dataset, EmbeddingResult, EmbeddingMethod, ClusteringMethod, ClusteringResult, DimReductionResult, DimReductionMethod
 
 logger = logging.getLogger(__name__)
 

@@ -1,8 +1,8 @@
 from sklearn.cluster import AffinityPropagation
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
 
-from clustering import BaseClustering
+from src.clustering import BaseClustering
+
 
 class Affinity(BaseClustering):
     """
@@ -33,7 +33,3 @@ class Affinity(BaseClustering):
         self.labels = pd.DataFrame(self.clusterer.labels_, columns=['Cluster Label'], index=data.index)
         self.save_labels('affinity', embedding_method_name, self.labels)
         return
-
-
-
-

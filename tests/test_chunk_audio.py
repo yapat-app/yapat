@@ -5,7 +5,8 @@ import librosa
 import numpy as np
 import pandas as pd
 
-from embeddings import _split_audio_into_chunks
+from src.embeddings import _split_audio_into_chunks
+from tests._paths import ROOT_PATH
 
 
 class TestSplitAudioChunks(unittest.TestCase):
@@ -13,7 +14,7 @@ class TestSplitAudioChunks(unittest.TestCase):
     def setUp(self):
         """Set up a real example .wav file."""
         # Assuming test.wav is available in the 'tests/audio' directory.
-        self.audio_file = os.path.join('tests', 'assets', 'test_data', 'INCT41_20210103_181500.wav')
+        self.audio_file = os.path.join(ROOT_PATH, 'tests', 'assets', 'test_data', 'INCT41_20210103_181500.wav')
         self.chunk_duration = 3.0  # Duration in seconds
         self.sampling_rate = 22050  # Example sampling rate
 

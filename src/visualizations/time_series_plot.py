@@ -3,7 +3,7 @@ from datetime import datetime
 import calendar
 import plotly.express as px
 
-from visualizations import BaseVisualization
+from src.visualizations import BaseVisualization
 
 
 class TimeSeries(BaseVisualization):
@@ -59,4 +59,3 @@ class TimeSeries(BaseVisualization):
 
         fig.update_layout(title=f'{y_variables_str} over Time with {self.resolution} resolution')
         return fig
-

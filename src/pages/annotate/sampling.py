@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from flask_login import current_user
 
-from .model import get_model, train_model
+from src.pages.annotate.model import get_model, train_model
 
 # from dash_app import app_utils
 

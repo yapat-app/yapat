@@ -5,8 +5,8 @@ from unittest.mock import patch
 import numpy as np
 import tensorflow as tf
 
-from assets.models.vae_xprize import VAE
-from embeddings.vae import VAEEmbedding, _compute_spectrogram
+from src.assets.models.vae_xprize import VAE
+from src.embeddings.vae import VAEEmbedding, _compute_spectrogram
 
 
 class TestVAEEmbedding(unittest.TestCase):
@@ -87,9 +87,9 @@ class TestVAEEmbedding(unittest.TestCase):
         )
 
         instance.load_model()
-        self.assertIsNotNone(self.model)
-        self.assertTrue(hasattr(self.model, 'fit'))
-        self.assertTrue(hasattr(self.model.encoder, 'predict'))
+        self.assertIsNotNone(instance.model)
+        self.assertTrue(hasattr(instance.model, 'fit'))
+        self.assertTrue(hasattr(instance.model.encoder, 'predict'))
 
 
 if __name__ == '__main__':

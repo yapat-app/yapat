@@ -9,8 +9,8 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-from assets.models.vae_xprize import VAE
-from embeddings import BaseEmbedding
+from src.assets.models.vae_xprize import VAE
+from src.embeddings import BaseEmbedding
 
 
 class VAEEmbedding(BaseEmbedding):
@@ -55,7 +55,7 @@ class VAEEmbedding(BaseEmbedding):
             beta_kl=1,
             kw_spectrograms: dict or None = None
     ):
-        super().__init__(dataset_name, clip_duration, model_path, sampling_rate, dask_client)
+        super().__init__(clip_duration, model_path, sampling_rate, dask_client)
         self.learning_rate = learning_rate
         self.epochs = epochs
         self.batch_size = batch_size
@@ -115,7 +115,6 @@ class VAEEmbedding(BaseEmbedding):
                 self.kw_spectrograms.get('resolution') * (1 - self.kw_spectrograms.get('overlap')))), 1)
         self.model = VAE(input_shape=input_shape, latent_dim=self.latent_dim, beta_kl=self.beta_kl)
         self.model.compile(tf.keras.optimizers.Adam(learning_rate=self.learning_rate))
-        return
 
     def train_model(self):
         if self.model is None:

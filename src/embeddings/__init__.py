@@ -10,13 +10,13 @@ import dask.distributed
 import librosa
 import numpy as np
 import pandas as pd
-from sqlalchemy import create_engine, select
+# from sqlalchemy import create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import sessionmaker
+# from sqlalchemy.orm import sessionmaker
 from src import sqlalchemy_db, server
 
-#from extensions import sqlalchemy_db
-from schema_model import Dataset, EmbeddingMethod, EmbeddingResult
+#from src.extensions import sqlalchemy_db
+from src.schema_model import Dataset, EmbeddingMethod, EmbeddingResult
 
 logger = logging.getLogger(__name__)
 
@@ -279,17 +279,16 @@ def get_embedding_model(method_name, *args, **kwargs):
     - ValueError: If the provided method_name is not recognized.
     """
     if method_name == "birdnet":
-        from embeddings.birdnet import BirdnetEmbedding
+        from src.embeddings.birdnet import BirdnetEmbedding
         return BirdnetEmbedding(*args, **kwargs)
 
     elif method_name == "acoustic_indices":
-        from embeddings.acoustic_indices import AcousticIndices
+        from src.embeddings.acoustic_indices import AcousticIndices
         return AcousticIndices(*args, **kwargs)
 
     elif method_name == "vae":
-        from embeddings.vae import VAEEmbedding
+        from src.embeddings.vae import VAEEmbedding
         return VAEEmbedding(*args, **kwargs)
 
     else:
         raise ValueError(f"Unknown embedding method: {method_name}")
-
