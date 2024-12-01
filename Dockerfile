@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 COPY requirements.txt /
 
-RUN apt-get update && apt-get install -y pkg-config libhdf5-dev git && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir -r /requirements.txt
 
 RUN pip install -r /requirements.txt && rm -rf /root/.cache
 
